@@ -1,55 +1,55 @@
-# arn-build3 docker 
+# arn-build3 docker
 
-default: help
+default: docker.help
 
-# Default settings
-HOSTNAME 	?= $(shell hostname)
-USER		?= $(shell whoami)
+include common.mk
 
-# Don't inherit path from environment any extra PATH:s needs to go into one of the *config-*.mk
-export PATH	:= /bin:/usr/bin
-export SHELL	:= /bin/bash
-
-# Optional configuration
--include make/hostconfig-$(HOSTNAME).mk
--include make/userconfig-$(USER).mk
--include make/userconfig-$(HOSTNAME)-$(USER).mk
-
-TOP	:= $(shell pwd)
-
-# Define V=1 to echo everything
-ifneq ($(V),1)
-Q=@
-endif
-
-vpath % .stamps
-MKSTAMP = $(Q)mkdir -p .stamps ; touch .stamps/$@
-
+################################################################
 DOCKER_IMAGES += jenkins
-DOCKER_IMAGES += saxofon/wrlinux_builder
+DOCKER_IMAGES += saxofon/wrlinux_builder:5_8
+DOCKER_IMAGES += gitea/gitea
 
 DOCKER_CONTAINERS += docker.jenkins
+DOCKER_CONTAINERS += docker.gitea
 DOCKER_CONTAINERS += docker.wrlinux6
 DOCKER_CONTAINERS += docker.wrlinux8
 
 DOCKER_PATH =""
 
-docker.pull:
-	docker pull $(DOCKER_IMAGES)
+################################################################
+docker.pull: # Fetch all images
+	$(foreach image,$(DOCKER_IMAGES), \
+		docker pull $(image); )
 
-docker.jenkins:
-	$(ECHO) $@ TBD
-	$(MKSTAMP)
+docker.update: docker.pull # Update all images
+
+docker.%:
+	$(TRACE)
+	docker $*
+
+docker.list: docker.images docker.ps # List all images and containers
+	$(ECHO) ""
+
+docker.jenkins: # Start jenkins container 
+	$(TRACE)
+
+
+docker.gitea: # Start gitea container
+	$(TRACE)
 
 docker.wrlinux6:
-	$(ECHO) $@ TBD
-	$(MKSTAMP)
+	$(TRACE)
 
 docker.wrlinux8:
-	$(ECHO) $@ TBD
-	$(MKSTAMP)
+	$(TRACE)
 
 docker.run: $(DOCKER_CONTAINERS)
 
 docker.export:
-	$(ECHO) $@ TBD
+	$(TRACE)
+
+docker.help:
+	$(GREEN)
+	$(ECHO) -e "\n----- $@ -----"
+	$(Q)grep ":" Makefile | grep -v -e grep | grep -e "\#" | sed 's/:/#/' | cut -d'#' -f1,3 | sort | column -s'#' -t 
+	$(NORMAL)
