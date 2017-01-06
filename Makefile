@@ -14,7 +14,8 @@ DOCKER_CONTAINERS += docker.gitea
 DOCKER_CONTAINERS += docker.wrlinux6
 DOCKER_CONTAINERS += docker.wrlinux8
 
-DOCKER_PATH =""
+DOCKER_PATH 	=""
+DOCKER		= $(Q)docker
 
 ################################################################
 docker.pull: # Fetch all images
@@ -25,14 +26,13 @@ docker.update: docker.pull # Update all images
 
 docker.%:
 	$(TRACE)
-	docker $*
+	$(DOCKER) $*
 
 docker.list: docker.images docker.ps # List all images and containers
 	$(ECHO) ""
 
 docker.jenkins: # Start jenkins container 
 	$(TRACE)
-
 
 docker.gitea: # Start gitea container
 	$(TRACE)
