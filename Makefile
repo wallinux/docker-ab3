@@ -11,8 +11,6 @@ DOCKER_IMAGES += gitea/gitea
 
 DOCKER_CONTAINERS += docker.jenkins
 DOCKER_CONTAINERS += docker.gitea
-DOCKER_CONTAINERS += docker.wrlinux6
-DOCKER_CONTAINERS += docker.wrlinux8
 
 DOCKER_PATH 	=""
 DOCKER		= $(Q)docker
@@ -32,17 +30,27 @@ docker.%:
 docker.list: docker.images docker.ps # List all images and containers
 	$(ECHO) ""
 
-docker.jenkins: # Start jenkins container 
+docker.jenkins: # Create jenkins container
 	$(TRACE)
+	$(DOCKER) create -P --name eprime_jenkins \
+	-v /opt/jenkins:/var/jenkins_home:shared \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-h jenkins.eprime.com \
+	-p 8080:8080 \
+	-p 50000:50000 \
+	-it jenkins
+	$(DOCKER) start eprime_jenkins
 
-docker.gitea: # Start gitea container
+docker.gitea: # Create gitea container
 	$(TRACE)
-
-docker.wrlinux6:
-	$(TRACE)
-
-docker.wrlinux8:
-	$(TRACE)
+	$(DOCKER) create -P --name eprime_gitea \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /opt/gitea:/data \
+	-h gitea.eprime.com \
+	-p 3000:3000 \
+	-p 10022:22 \
+	-it gitea/gitea
+	$(DOCKER) start eprime_gitea
 
 docker.run: $(DOCKER_CONTAINERS)
 
