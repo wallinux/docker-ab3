@@ -21,7 +21,7 @@ endif
 vpath % .stamps
 MKSTAMP = $(Q)mkdir -p .stamps ; touch .stamps/$@
 %.force:
-	rm -f $(BUILDDIR)/stamps/$*
+	rm -f $(TOP)/.stamps/$*
 	$(MAKE) $*
 
 -include cmd.mk

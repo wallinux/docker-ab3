@@ -23,14 +23,14 @@ docker.pull: # Fetch all images
 docker.update: docker.pull # Update all images
 	$(TRACE)
 
-docker.%:
+docker.%: #
 	$(TRACE)
 	$(DOCKER) $*
 
 docker.list: docker.images docker.ps # List all images and containers
 	$(ECHO) ""
 
-docker.jenkins: # Create jenkins container
+jenkins.create:
 	$(TRACE)
 	$(DOCKER) create -P --name eprime_jenkins \
 	-v /opt/jenkins:/var/jenkins_home:shared \
@@ -39,9 +39,25 @@ docker.jenkins: # Create jenkins container
 	-p 8080:8080 \
 	-p 50000:50000 \
 	-it jenkins
+	$(MKSTAMP)
+
+jenkins.start: # Start jenkins container
+	$(TRACE)
 	$(DOCKER) start eprime_jenkins
 
-docker.gitea: # Create gitea container
+jenkins.stop: # Stop jenkins container
+	$(TRACE)
+	$(DOCKER) stop eprime_jenkins
+
+jenkins.rm: # Remove jenkins container
+	$(TRACE)
+	$(DOCKER) rm eprime_jenkins
+	$(RM) $(BUILDDIR)/stamps/jenkins.create
+
+docker.jenkins: jenkins.create jenkins.start # Create and start jenkins container
+	$(TRACE)
+
+docker.gitea: # Create and start gitea container
 	$(TRACE)
 	$(DOCKER) create -P --name eprime_gitea \
 	-v /var/run/docker.sock:/var/run/docker.sock \
