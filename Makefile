@@ -19,10 +19,11 @@ DOCKER		= $(Q)docker
 
 ################################################################
 docker.pull: # Fetch all images
-	$(foreach image,$(DOCKER_IMAGES), \
+	$(Q)$(foreach image,$(DOCKER_IMAGES), \
 		docker pull $(image); )
 
 docker.update: docker.pull # Update all images
+	$(TRACE)
 
 docker.%:
 	$(TRACE)
