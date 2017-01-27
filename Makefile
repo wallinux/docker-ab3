@@ -15,6 +15,10 @@ DOCKER_CONTAINERS += docker.gitea
 DOCKER_PATH 	=""
 DOCKER		= $(Q)docker
 
+JENKINS_CONTAINER = eprime_jenkins
+JENKINS_PORT	  = 8091
+GITEA_CONTAINER   = eprime_gitea
+
 ################################################################
 docker.pull: # Fetch all images
 	$(Q)$(foreach image,$(DOCKER_IMAGES), \
@@ -22,6 +26,10 @@ docker.pull: # Fetch all images
 
 docker.update: docker.pull # Update all images
 	$(TRACE)
+
+docker.ps:
+	$(TRACE)
+	$(DOCKER) ps -a
 
 docker.%: #
 	$(TRACE)
@@ -32,27 +40,50 @@ docker.list: docker.images docker.ps # List all images and containers
 
 jenkins.create:
 	$(TRACE)
-	$(DOCKER) create -P --name eprime_jenkins \
-	-v /opt/jenkins:/var/jenkins_home:shared \
+	$(eval docker_bin=$(shell which docker))
+	$(eval docker_gid=$(shell getent group docker | cut -d: -f3))
+	$(DOCKER) create -P --name $(JENKINS_CONTAINER) \
+	-v /var/jenkins_home:/var/jenkins_home:shared \
 	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v $(docker_bin):/usr/bin/docker \
 	-h jenkins.eprime.com \
-	-p 8080:8080 \
+	--dns=128.224.92.11 \
+	--dns-search=wrs.com \
+	-p $(JENKINS_PORT):8080 \
 	-p 50000:50000 \
 	-it jenkins
+	$(DOCKER) start $(JENKINS_CONTAINER)
+	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get update
+	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get install make
+	$(DOCKER) exec -u root $(JENKINS_CONTAINER) groupadd --gid $(docker_gid) docker
+	$(DOCKER) exec -u root $(JENKINS_CONTAINER) usermod -aG docker jenkins
+	$(DOCKER) stop $(JENKINS_CONTAINER)
 	$(MKSTAMP)
 
 jenkins.start: # Start jenkins container
 	$(TRACE)
-	$(DOCKER) start eprime_jenkins
+	$(DOCKER) start $(JENKINS_CONTAINER)
 
 jenkins.stop: # Stop jenkins container
 	$(TRACE)
-	$(DOCKER) stop eprime_jenkins
+	$(DOCKER) stop $(JENKINS_CONTAINER)
 
 jenkins.rm: # Remove jenkins container
 	$(TRACE)
-	$(DOCKER) rm eprime_jenkins
-	$(RM) $(BUILDDIR)/stamps/jenkins.create
+	$(DOCKER) rm $(JENKINS_CONTAINER)
+	$(RM) $(TOP)/.stamps/jenkins.create
+
+jenkins.shell: # start a shell in jenkins container
+	$(TRACE)
+	$(DOCKER) exec -it $(JENKINS_CONTAINER) /bin/bash
+
+jenkins.rootshell: # start a shell as root user in jenkins container
+	$(TRACE)
+	$(DOCKER) exec -u root -it $(JENKINS_CONTAINER) /bin/bash
+
+jenkins.dockertest: # test to run a docker image inside jenkins
+	$(TRACE)
+	$(DOCKER) exec -it $(JENKINS_CONTAINER) docker run --rm hello-world
 
 docker.jenkins: jenkins.create jenkins.start # Create and start jenkins container
 	$(TRACE)
@@ -78,3 +109,8 @@ docker.help:
 	$(ECHO) -e "\n----- $@ -----"
 	$(Q)grep ":" Makefile | grep -v -e grep | grep -e "\#" | sed 's/:/#/' | cut -d'#' -f1,3 | sort | column -s'#' -t 
 	$(NORMAL)
+
+docker.todo: # steps to run manually on ab3
+	$(ECHO) cp /opt/jenkins from my laptop
+	$(ECHO) sudo ln -sfn /opt/jenkins /var/jenkins_home
+	$(ECHO) add awallin and jenkins to docker group
