@@ -60,7 +60,7 @@ jenkins.create:
 	$(DOCKER) stop $(JENKINS_CONTAINER)
 	$(MKSTAMP)
 
-jenkins.start: # Start jenkins container
+jenkins.start: jenkins.create # Start jenkins container
 	$(TRACE)
 	$(DOCKER) start $(JENKINS_CONTAINER)
 
@@ -73,15 +73,15 @@ jenkins.rm: # Remove jenkins container
 	$(DOCKER) rm $(JENKINS_CONTAINER)
 	$(RM) $(TOP)/.stamps/jenkins.create
 
-jenkins.shell: # start a shell in jenkins container
+jenkins.shell: # Start a shell in jenkins container
 	$(TRACE)
 	$(DOCKER) exec -it $(JENKINS_CONTAINER) /bin/bash
 
-jenkins.rootshell: # start a shell as root user in jenkins container
+jenkins.rootshell: # Start a shell as root user in jenkins container
 	$(TRACE)
 	$(DOCKER) exec -u root -it $(JENKINS_CONTAINER) /bin/bash
 
-jenkins.dockertest: # test to run a docker image inside jenkins
+jenkins.dockertest: # Test to run a docker image inside jenkins
 	$(TRACE)
 	$(DOCKER) exec -it $(JENKINS_CONTAINER) docker run --rm hello-world
 
@@ -110,7 +110,7 @@ docker.help:
 	$(Q)grep ":" Makefile | grep -v -e grep | grep -e "\#" | sed 's/:/#/' | cut -d'#' -f1,3 | sort | column -s'#' -t 
 	$(NORMAL)
 
-docker.todo: # steps to run manually on ab3
+docker.todo: # Steps to run manually on ab3
 	$(ECHO) cp /opt/jenkins from my laptop
 	$(ECHO) sudo ln -sfn /opt/jenkins /var/jenkins_home
 	$(ECHO) add awallin and jenkins to docker group
