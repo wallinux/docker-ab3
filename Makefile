@@ -17,6 +17,7 @@ DOCKER		= $(Q)docker
 
 JENKINS_CONTAINER = eprime_jenkins
 JENKINS_PORT	  = 8091
+JENKINS_HOME	  = /var/jenkins_home
 GITEA_CONTAINER   = eprime_gitea
 
 ################################################################
@@ -43,7 +44,7 @@ jenkins.create:
 	$(eval docker_bin=$(shell which docker))
 	$(eval docker_gid=$(shell getent group docker | cut -d: -f3))
 	$(DOCKER) create -P --name $(JENKINS_CONTAINER) \
-	-v /var/jenkins_home:/var/jenkins_home:shared \
+	-v $(JENKINS_HOME):$(JENKINS_HOME):shared \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v $(docker_bin):/usr/bin/docker \
 	-h jenkins.eprime.com \
@@ -75,7 +76,7 @@ jenkins.rm: # Remove jenkins container
 
 jenkins.shell: # Start a shell in jenkins container
 	$(TRACE)
-	$(DOCKER) exec -it $(JENKINS_CONTAINER) /bin/bash
+	$(DOCKER) exec -it $(JENKINS_CONTAINER) /bin/bash -c "cd $(JENKINS_HOME); exec '$${SHELL:-sh}'"
 
 jenkins.rootshell: # Start a shell as root user in jenkins container
 	$(TRACE)
