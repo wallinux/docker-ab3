@@ -1,6 +1,6 @@
 # arn-build3 docker
 
-default: docker.help
+default: help
 
 include common.mk
 
@@ -32,7 +32,7 @@ docker.ps:
 	$(TRACE)
 	$(DOCKER) ps -a
 
-docker.%: #
+docker.%: # $ docker %
 	$(TRACE)
 	$(DOCKER) $*
 
@@ -43,6 +43,7 @@ jenkins.create:
 	$(TRACE)
 	$(eval docker_bin=$(shell which docker))
 	$(eval docker_gid=$(shell getent group docker | cut -d: -f3))
+	$(eval host_timezone=$(shell cat /etc/timezone))
 	$(DOCKER) create -P --name $(JENKINS_CONTAINER) \
 	-v $(JENKINS_HOME):$(JENKINS_HOME):shared \
 	-v /var/run/docker.sock:/var/run/docker.sock \
@@ -58,6 +59,7 @@ jenkins.create:
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get install make
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) groupadd --gid $(docker_gid) docker
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) usermod -aG docker jenkins
+	$(DOCKER) exec -u root $(JENKINS_CONTAINER) echo $(host_timezone) >/etc/timezone && > dpkg-reconfigure -f noninteractive tzdata
 	$(DOCKER) stop $(JENKINS_CONTAINER)
 	$(MKSTAMP)
 
@@ -110,6 +112,8 @@ docker.help:
 	$(ECHO) -e "\n----- $@ -----"
 	$(Q)grep ":" Makefile | grep -v -e grep | grep -e "\#" | sed 's/:/#/' | cut -d'#' -f1,3 | sort | column -s'#' -t 
 	$(NORMAL)
+
+help: docker.help
 
 docker.todo: # Steps to run manually on ab3
 	$(ECHO) cp /opt/jenkins from my laptop
