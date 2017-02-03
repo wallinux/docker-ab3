@@ -4,20 +4,25 @@ default: help
 
 include common.mk
 
+export TERM xterm
+
 ################################################################
 DOCKER_IMAGES += jenkins
 DOCKER_IMAGES += saxofon/wrlinux_builder:5_8
 DOCKER_IMAGES += gitea/gitea
 
-DOCKER_CONTAINERS += docker.jenkins
-DOCKER_CONTAINERS += docker.gitea
-
 DOCKER_PATH 	=""
 DOCKER		= $(Q)docker
 
-JENKINS_CONTAINER = eprime_jenkins
+JENKINS_CONTAINER = rcs_eprime_jenkins
 JENKINS_PORT	  = 8091
 JENKINS_HOME	  = /var/jenkins_home
+
+GITEA_CONTAINER   = eprime_gitea
+
+WRLINUX8_IMAGE 	   = rcs_eprime_wrlinux8
+WRLINUX8_CONTAINER = rcs_eprime_wrlinux8
+
 GITEA_CONTAINER   = eprime_gitea
 
 ################################################################
@@ -38,6 +43,39 @@ docker.%: # $ docker %
 
 docker.list: docker.images docker.ps # List all images and containers
 	$(ECHO) ""
+
+$(WRLINUX8_IMAGE).dir:
+	$(MKDIR) $@
+
+wrlinux8-builder.start:
+	$(TRACE)
+	# TODO remove docker image
+
+wrlinux8-builder.clean:
+	$(TRACE)
+	$(RM) -r  $(WRLINUX8_IMAGE).dir
+	# TODO remove docker image
+
+wrlinux8-builder.create: $(WRLINUX8_IMAGE).dir
+	$(TRACE)
+	$(eval host_timezone=$(shell cat /etc/timezone))
+	$(ECHO) "FROM saxofon/wrlinux_builder:5_8" > $</Dockerfile
+	$(ECHO) "MAINTAINER Anders Wallin" >> $</Dockerfile
+	$(ECHO) "RUN useradd --shell /bin/bash -d $(HOME) -u $(shell id -u) $(USER)" >> $</Dockerfile
+	$(ECHO) "RUN apt-get update" >> $</Dockerfile
+	$(ECHO) "RUN apt-get install -y apt-utils" >> $</Dockerfile
+	$(ECHO) "RUN apt-get upgrade -y" >> $</Dockerfile
+	$(ECHO) "RUN apt-get install -y apt-utils xsltproc" >> $</Dockerfile
+	$(ECHO) "ENTRYPOINT bin/bash -c echo Starting $(WRLINUX8_IMAGE).dir" >> $</Dockerfile
+	$(ECHO) "CMD ln -sfn /usr/share/zoneinfo/$(host_timezone) /etc/localtime" >> $</Dockerfile
+	$(ECHO) "CMD echo $(host_timezone) > dpkg-reconfigure -f noninteractive tzdata" >> $</Dockerfile
+#TODO
+# Add image name and tag
+# Fixa TERM
+# Lägg till image clean rule
+#	$(ECHO) "CMD grep -v -e "^WIND_INSTALL_BASE" -e "^\#" make/hostconfig-$(HOSTNAME).mk > make/hostconfig-$(DOCKER_HOSTNAME).mk" >> $</Dockerfile
+#	$(ECHO) "CMD echo "WIND_LX_HOME = $(WIND_LX_HOME)" >> make/hostconfig-$(DOCKER_HOSTNAME).mk" >> $</Dockerfile
+	$(DOCKER) build $<
 
 jenkins.create:
 	$(TRACE)
@@ -101,8 +139,6 @@ docker.gitea: # Create and start gitea container
 	-p 10022:22 \
 	-it gitea/gitea
 	$(DOCKER) start eprime_gitea
-
-docker.run: $(DOCKER_CONTAINERS)
 
 docker.export:
 	$(TRACE)
