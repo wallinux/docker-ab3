@@ -56,7 +56,7 @@ jenkins.create:
 	-it jenkins
 	$(DOCKER) start $(JENKINS_CONTAINER)
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get update
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get install make
+	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get install make bsdmainutils
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) groupadd --gid $(docker_gid) docker
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) usermod -aG docker jenkins
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) echo $(host_timezone) >/etc/timezone && > dpkg-reconfigure -f noninteractive tzdata
