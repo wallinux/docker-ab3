@@ -19,6 +19,7 @@ JENKINS_CONTAINER = eprime_jenkins
 JENKINS_PORT	  = 8091
 JENKINS_HOME	  = /var/jenkins_home
 JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -s http://127.0.0.1:8080/
+JENKINS_OPTS	  = --httpPort=$(JENKINS_PORT)
 GITEA_CONTAINER   = eprime_gitea
 
 ################################################################
@@ -53,8 +54,9 @@ jenkins.create:
 	-u root \
 	--dns=128.224.92.11 \
 	--dns-search=wrs.com \
-	-p $(JENKINS_PORT):8080 \
+	-p $(JENKINS_PORT):$(JENKINS_PORT) \
 	-p 50000:50000 \
+	-e "JENKINS_OPTS=$(JENKINS_OPTS)" \
 	-it jenkins
 	$(DOCKER) start $(JENKINS_CONTAINER)
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get update
