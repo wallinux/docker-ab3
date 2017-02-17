@@ -5,22 +5,22 @@ default: help
 include common.mk
 
 ################################################################
-DOCKER_IMAGES += jenkins
-DOCKER_IMAGES += saxofon/wrlinux_builder:5_8
-DOCKER_IMAGES += gitea/gitea
-
-DOCKER_CONTAINERS += docker.jenkins
-DOCKER_CONTAINERS += docker.gitea
-
-DOCKER_PATH 	=""
-DOCKER		= $(Q)docker
-
+JENKINS_IMAGE 	  = jenkins
 JENKINS_CONTAINER = eprime_jenkins
 JENKINS_PORT	  = 8091
 JENKINS_HOME	  = /var/jenkins_home
 JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -s http://127.0.0.1:8080/
 JENKINS_OPTS	  = --httpPort=$(JENKINS_PORT)
+
+GITEA_IMAGE   	  = gitea/gitea
 GITEA_CONTAINER   = eprime_gitea
+
+DOCKER_IMAGES 	+= $(JENKINS_IMAGE)
+DOCKER_IMAGES 	+= $(GITEA_CONTAINER)
+DOCKER_IMAGES 	+= saxofon/wrlinux_builder:5_8
+
+DOCKER_RUN 	+= jenkins.start
+DOCKER_RUN 	+= gitea.start
 
 ################################################################
 docker.pull: # Fetch all images
@@ -45,22 +45,24 @@ jenkins.create:
 	$(TRACE)
 	$(eval docker_bin=$(shell which docker))
 	$(eval docker_gid=$(shell getent group docker | cut -d: -f3))
+	$(eval users_gid=$(shell getent group users  | cut -d: -f3))
 	$(eval host_timezone=$(shell cat /etc/timezone))
 	$(DOCKER) create -P --name $(JENKINS_CONTAINER) \
 	-v $(JENKINS_HOME):$(JENKINS_HOME):shared \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v $(docker_bin):/usr/bin/docker \
 	-h jenkins.eprime.com \
-	-u root \
+	-u jenkins \
 	--dns=128.224.92.11 \
 	--dns-search=wrs.com \
 	-p $(JENKINS_PORT):$(JENKINS_PORT) \
 	-p 50000:50000 \
 	-e "JENKINS_OPTS=$(JENKINS_OPTS)" \
-	-it jenkins
+	-it $(JENKINS_IMAGE)
 	$(DOCKER) start $(JENKINS_CONTAINER)
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get update
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get install make bsdmainutils
+	$(DOCKER) exec -u root $(JENKINS_CONTAINER) usermod -g users jenkins
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) groupadd --gid $(docker_gid) docker
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) usermod -aG docker jenkins
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) sh -c "echo $(host_timezone) >/etc/timezone && ln -sf /usr/share/zoneinfo/$(host_timezone) /etc/localtime && dpkg-reconfigure -f noninteractive tzdata"
@@ -89,12 +91,12 @@ jenkins.rm: # Remove jenkins container
 	$(DOCKER) rm $(JENKINS_CONTAINER)
 	$(RM) $(TOP)/.stamps/jenkins.create
 
-jenkins.update.apt:
+jenkins.update.apt: jenkins.start
 	$(TRACE)
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get update
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get upgrade -y
 
-jenkins.update.plugins:
+jenkins.update.plugins: jenkins.start
 	$(TRACE)
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) $(JENKINS_CLI) list-plugins | grep -e ')$$' | awk '{ print $$1 }' > $(JENKINS_HOME)/plugin_updatelist
 	$(ECHO) "#!/bin/bash" >$(JENKINS_HOME)/plugin_updatelist.sh
@@ -113,7 +115,7 @@ jenkins.update: jenkins.update.apt jenkins.update.plugins # Update rpm packages 
 
 jenkins.shell: # Start a shell in jenkins container
 	$(TRACE)
-	$(DOCKER) exec -it $(JENKINS_CONTAINER) /bin/bash -c "cd $(JENKINS_HOME); exec '$${SHELL:-sh}'"
+	$(DOCKER) exec -u jenkins -it $(JENKINS_CONTAINER) /bin/bash -c "cd $(JENKINS_HOME); exec '$${SHELL:-sh}'"
 
 jenkins.rootshell: # Start a shell as root user in jenkins container
 	$(TRACE)
@@ -123,18 +125,23 @@ jenkins.dockertest: # Test to run a docker image inside jenkins
 	$(TRACE)
 	$(DOCKER) exec -it $(JENKINS_CONTAINER) docker run --rm hello-world
 
-docker.jenkins: jenkins.create jenkins.start # Create and start jenkins container
+jenkins.pull:
 	$(TRACE)
+	$(DOCKER) pull $(JENKINS_IMAGE)
 
-docker.gitea: # Create and start gitea container
+jenkins.%:
 	$(TRACE)
-	$(DOCKER) create -P --name eprime_gitea \
+	$(DOCKER) $* $(JENKINS_CONTAINER)
+
+gitea.start: # Create and start gitea container
+	$(TRACE)
+	$(DOCKER) create -P --name $(GITEA_CONTAINER) \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /opt/gitea:/data \
 	-h gitea.eprime.com \
 	-p 3000:3000 \
 	-p 10022:22 \
-	-it gitea/gitea
+	-it $(GITEA_IMAGE)
 	$(DOCKER) start eprime_gitea
 
 docker.run: $(DOCKER_CONTAINERS)

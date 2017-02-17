@@ -1,6 +1,7 @@
 # cmd.mk
 
 ECHO 	= $(Q)echo
+DOCKER	= $(Q)docker
 RED 	= $(Q)tput setaf 1
 GREEN 	= $(Q)tput setaf 2
 NORMAL 	= $(Q)tput sgr0
