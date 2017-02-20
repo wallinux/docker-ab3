@@ -9,7 +9,7 @@ JENKINS_IMAGE 	  = jenkins
 JENKINS_CONTAINER = eprime_jenkins
 JENKINS_PORT	  = 8091
 JENKINS_HOME	  = /var/jenkins_home
-JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -s http://127.0.0.1:8080/
+JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -s http://127.0.0.1:$(JENKINS_PORT)/
 JENKINS_OPTS	  = --httpPort=$(JENKINS_PORT)
 
 GITEA_IMAGE   	  = gitea/gitea
@@ -98,7 +98,7 @@ jenkins.update.apt: jenkins.start
 
 jenkins.update.plugins: jenkins.start
 	$(TRACE)
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) $(JENKINS_CLI) list-plugins | grep -e ')$$' | awk '{ print $$1 }' > $(JENKINS_HOME)/plugin_updatelist
+	$(DOCKER) exec -u jenkins $(JENKINS_CONTAINER) sh -c "$(JENKINS_CLI) list-plugins | grep -e ')$$' | awk '{ print $$1 }' > $(JENKINS_HOME)/plugin_updatelist"
 	$(ECHO) "#!/bin/bash" >$(JENKINS_HOME)/plugin_updatelist.sh
 	$(ECHO) "if [ -s $(JENKINS_HOME)/plugin_updatelist ]; then"  >> $(JENKINS_HOME)/plugin_updatelist.sh
 	$(ECHO) '  update_pluginlist=$$(cat $(JENKINS_HOME)/plugin_updatelist)' >> $(JENKINS_HOME)/plugin_updatelist.sh
@@ -106,8 +106,8 @@ jenkins.update.plugins: jenkins.start
 	$(ECHO) 'fi' >> $(JENKINS_HOME)/plugin_updatelist.sh
 	$(Q)chmod +x $(JENKINS_HOME)/plugin_updatelist.sh
 	$(Q)cat $(JENKINS_HOME)/plugin_updatelist.sh
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) sh -c $(JENKINS_HOME)/plugin_updatelist.sh
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) $(JENKINS_CLI) safe-restart
+	$(DOCKER) exec -u jenkins $(JENKINS_CONTAINER) sh -c $(JENKINS_HOME)/plugin_updatelist.sh
+	$(DOCKER) exec -u jenkins $(JENKINS_CONTAINER) $(JENKINS_CLI) safe-restart
 	$(RM) $(JENKINS_HOME)/plugin_updatelist.sh $(JENKINS_HOME)/plugin_updatelist
 
 jenkins.update: jenkins.update.apt jenkins.update.plugins # Update rpm packages and jenkins plugins
