@@ -1,6 +1,7 @@
 # cmd.mk
 
 ECHO 	= $(Q)echo
+DOCKER	= $(Q)docker
 MKDIR	= $(Q)mkdir -p
 RM	= $(Q)rm -f
 
