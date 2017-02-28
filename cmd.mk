@@ -2,6 +2,8 @@
 
 ECHO 	= $(Q)echo
 DOCKER	= $(Q)docker
+MKDIR	= $(Q)mkdir -p
+RM	= $(Q)rm -f
 RED 	= $(Q)tput setaf 1
 GREEN 	= $(Q)tput setaf 2
 NORMAL 	= $(Q)tput sgr0

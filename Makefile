@@ -4,9 +4,10 @@ default: help
 
 include common.mk
 
+export TERM xterm
 ################################################################
 JENKINS_IMAGE 	  = jenkins
-JENKINS_CONTAINER = eprime_jenkins
+JENKINS_CONTAINER = rcs_eprime_jenkins
 JENKINS_PORT	  = 8091
 JENKINS_HOME	  = /var/jenkins_home
 JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -s http://127.0.0.1:$(JENKINS_PORT)/
@@ -15,9 +16,12 @@ JENKINS_OPTS	  = --httpPort=$(JENKINS_PORT)
 GITEA_IMAGE   	  = gitea/gitea
 GITEA_CONTAINER   = eprime_gitea
 
+WRLINUX8_IMAGE 	   = saxofon/wrlinux_builder:5_8
+WRLINUX8_CONTAINER = rcs_eprime_wrlinux8
+
 DOCKER_IMAGES 	+= $(JENKINS_IMAGE)
-DOCKER_IMAGES 	+= $(GITEA_CONTAINER)
-DOCKER_IMAGES 	+= saxofon/wrlinux_builder:5_8
+DOCKER_IMAGES 	+= $(GITEA_IMAGE)
+DOCKER_IMAGES 	+= $(WRLINUX_IMAGE)
 
 DOCKER_RUN 	+= jenkins.start
 DOCKER_RUN 	+= gitea.start
@@ -156,8 +160,3 @@ docker.help:
 	$(NORMAL)
 
 help: docker.help
-
-docker.todo: # Steps to run manually on ab3
-	$(ECHO) cp /opt/jenkins from my laptop
-	$(ECHO) sudo ln -sfn /opt/jenkins /var/jenkins_home
-	$(ECHO) add awallin and jenkins to docker group
