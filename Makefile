@@ -52,17 +52,17 @@ jenkins.create:
 	$(eval users_gid=$(shell getent group users  | cut -d: -f3))
 	$(eval host_timezone=$(shell cat /etc/timezone))
 	$(DOCKER) create -P --name $(JENKINS_CONTAINER) \
-	-v $(JENKINS_HOME):$(JENKINS_HOME):shared \
-	-v /var/run/docker.sock:/var/run/docker.sock \
-	-v $(docker_bin):/usr/bin/docker \
-	-h jenkins.eprime.com \
-	-u jenkins \
-	--dns=128.224.92.11 \
-	--dns-search=wrs.com \
-	-p $(JENKINS_PORT):$(JENKINS_PORT) \
-	-p 50000:50000 \
-	-e "JENKINS_OPTS=$(JENKINS_OPTS)" \
-	-it $(JENKINS_IMAGE)
+		-v $(JENKINS_HOME):$(JENKINS_HOME):shared \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v $(docker_bin):/usr/bin/docker \
+		-h jenkins.eprime.com \
+		-u jenkins \
+		--dns=128.224.92.11 \
+		--dns-search=wrs.com \
+		-p $(JENKINS_PORT):$(JENKINS_PORT) \
+		-p 50000:50000 \
+		-e "JENKINS_OPTS=$(JENKINS_OPTS)" \
+		-it $(JENKINS_IMAGE)
 	$(DOCKER) start $(JENKINS_CONTAINER)
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get update
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get install make bsdmainutils
