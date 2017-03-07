@@ -5,6 +5,7 @@ USER		?= $(shell whoami)
 # Don't inherit path from environment
 export PATH	:= /bin:/usr/bin
 export SHELL	:= /bin/bash
+export TERM 	:= xterm
 
 # Optional configuration
 -include hostconfig-$(HOSTNAME).mk
@@ -18,10 +19,25 @@ ifneq ($(V),1)
 Q=@
 endif
 
-vpath % .stamps
-MKSTAMP = $(Q)mkdir -p .stamps ; touch .stamps/$@
+.PHONY: *.help
+
+define run-help
+	$(GREEN)
+	$(ECHO) -e "\n----- $@ -----"
+	$(Q)grep ":" $(1) | grep -v -e grep | grep -e "\#" | sed 's/:/#/' | cut -d'#' -f1,3 | sort | column -s'#' -t 
+	$(NORMAL)
+endef
+
+STAMPSDIR = $(TOP)/.stamps
+vpath % $(STAMPSDIR)
+MKSTAMP = $(Q)mkdir -p $(STAMPSDIR) ; touch $(STAMPSDIR)/$@
 %.force:
-	rm -f $(TOP)/.stamps/$*
+	$(call rmstamp, $*)
 	$(MAKE) $*
+
+define rmstamp
+	$(RM) $(STAMPSDIR)/$(1) 
+endef
+
 
 -include cmd.mk
