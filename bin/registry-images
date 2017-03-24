@@ -1,0 +1,42 @@
+#!/bin/bash
+
+if [ "$1" = "" ]; then
+    REGISTRY=http://localhost:5000
+else
+    REGISTRY=$1
+fi
+
+CLINK="/v2/_catalog?n=10"
+CFILE=docker.registry.catalog
+TFILE=docker.registry.tags
+
+function listFullCatalog {
+    while true; do
+	wget -O- -q -S "${REGISTRY}${CLINK}" 2> ${CFILE} \
+	    | json_pp -t json | grep -F  "      " | cut -d\" -f2 | listTags
+
+	CLINK=`grep Link ${CFILE} 2>/dev/null | cut -d\< -f2 | cut -d\> -f1`
+	if [ ! -n "${CLINK}" ]; then
+	    rm ${CFILE}
+	    break
+	fi
+    done
+}
+
+function listTags {
+    cat - | while read image; do
+	TLINK="/v2/${image}/tags/list?n=10"
+	while true; do
+	    wget -O- -q -S "${REGISTRY}${TLINK}" 2>${TFILE} \
+		| json_pp -t json | grep -F  "      " | cut -d\" -f2 | sed "s@^@${image}:@"
+	    
+	    TLINK=`grep Link ${TFILE} 2>/dev/null | cut -d\< -f2 | cut -d\> -f1`
+	    if [ ! -n "${TLINK}" ]; then
+		rm ${TFILE}
+		break
+	    fi
+	done
+    done
+}
+
+listFullCatalog

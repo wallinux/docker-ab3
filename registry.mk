@@ -31,9 +31,14 @@ registry.pull: # Update registry image
 	$(TRACE)
 	$(DOCKER) pull $(REGISTRY_CONTAINER)
 
+registry.list: # List images in registry
+	$(TRACE)
+	$(Q)$(TOP)/bin/registry-images "http://$(REGISTRY_SERVER)"
+
 registry.help:
 	$(TRACE)
 	$(call run-help, registry.mk)
+	$(call run-note, "REGISTRY_SERVER = $(REGISTRY_SERVER)")
 
 help:: registry.help
 

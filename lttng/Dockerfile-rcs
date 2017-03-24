@@ -1,0 +1,13 @@
+FROM lttng
+MAINTAINER Anders Wallin
+
+# Building lttng repos
+RUN (cd lttng-test; make rcs.patch)
+RUN (cd lttng-test; make install.userspace-rcu)
+RUN (cd lttng-test; make install.lttng-ust)
+RUN (cd lttng-test; make install.lttng-tools)
+RUN (cd lttng-test; make install babeltrace)
+
+#EXPOSE 5342 5343 5344
+
+ENTRYPOINT ["/bin/sh"]
