@@ -1,0 +1,86 @@
+[core]
+	editor = emacs
+	excludesfile = ~/.gitignore
+	quotepath = false
+
+[user]
+	name = Anders Wallin
+	email = anders.wallin@windriver.com
+#	email = wallinux@gmail.com
+
+[alias]
+	co         = checkout
+	bll        = branch -a
+	bls        = branch
+	rmb        = branch -D
+	cp         = cherry-pick
+	fp         = format-patch -s -n --thread -o patches/
+	fp1        = format-patch -s -n --thread -1
+	fp1-lpd    = format-patch -s -n --thread -1 --cover-letter
+	awmail     = send-email --to=wr.wallinux@gmail.com
+	lttngmail  = send-email --to=lttng-dev@lists.lttng.org
+#	lpdmail    = send-email --no-signed-off-by-cc --to=lpd-eng-osc@windriver.com --annotate
+#	kernelmail = send-email --no-signed-off-by-cc
+	hreset     = reset --hard HEAD^
+	amend	   = commit --amend
+	amendq	   = commit --amend --no-edit
+	wc	   = whatchanged
+	diffstat   = diff --stat -r
+	logstat    = log --stat
+	export	   = !sh -c 'git archive --format=tar master | gzip > $0.tgz'
+	export2	   = !(git archive --format=tar master | gzip >$(git rev-parse --show-toplevel | xargs basename).$(git rev-parse HEAD).tgz)
+	new	   = !(git init && git add . && git commit -q -m "first_version" && git lg)
+	newall	   = !(git init && git add -A -f && git commit -q -m "first_version" && git lg)
+	lg 	   = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+	lver 	   = log --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+	checkpatch = !(cd $(git root) && git diff | ./scripts/checkpatch.pl --strict --no-signoff -)
+	root 	   = !pwd
+	sync	   = !(git fetch && git rebase origin/master)
+	sign	   = commit -s --amend --no-edit
+
+[diff]
+	renamelimit = 0
+	tool = meld
+
+#[sendemail]
+#	suppresscc = all
+#	confirm=always
+#	chainreplyto = false
+# 	from = "Anders Wallin <Anders.Wallin@windriver.com>"
+#	smtpserver = smtp-eu.wrs.com
+
+[sendemail]
+	suppresscc = self
+    	smtpEncryption = tls
+    	smtpServer = smtp.gmail.com
+    	smtpUser = wallinux@gmail.com
+    	smtpServerPort = 587
+	suppresscc = all
+#ibxzcjsmpqbmemsu
+
+[color]
+	ui = auto
+[merge]
+	tool = meld
+[wrgit]
+	username = awallin
+	autoupdate = true
+[gui]
+	editor = emacs
+
+[push]
+	default = upstream
+#[branch]
+#	autosetuprebase = always
+
+[cola]
+	savewindowsettings = false
+	textwidth = 80
+[imap]
+	host = imaps://imap.gmail.com
+	user = wallinux@gmail.com
+	port = 993
+	sslverify = false
+	folder = [Gmail]/Drafts
+[credential]
+	helper = store

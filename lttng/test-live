@@ -1,0 +1,72 @@
+#!/bin/sh
+#set -x
+
+#VERBOSE=-v
+
+[ "$TARGETIP" = "" ] && TARGETIP=128.224.95.181
+TARGETCMD="ssh root@${TARGETIP}"
+TARGETNAME=$($TARGETCMD hostname)
+TARGETARCH=$($TARGETCMD uname -i)
+if [ "$TARGETARCH" = aarch64 ]; then
+    LIB=lib64
+else
+    LIB=lib
+fi
+
+TESTAPP=/usr/$LIB/lttng-tools/ptest/tests/utils/testapp/gen-ust-events/gen-ust-events
+NO_OF_EVENTS=10
+SESSION=livetest
+
+sshpass -p root ssh-copy-id ${TARGETIP}
+
+############################
+
+echo ----------------------
+echo "HOST"
+echo "  host ip:             " $HOSTIP
+echo "  babeltrace version:  " $(babeltrace -h | head -1)
+echo "  lttng-relayd version:" $(lttng-relayd --version)
+echo "TARGET"
+echo "  target hostname:     " $TARGETNAME
+echo "  target ip:           " $TARGETIP
+echo "  lttng version:       " $($TARGETCMD lttng -V)
+echo "  arch:                " $TARGETARCH
+echo ----------------------
+
+# cleanup if $SESSION already exist
+rm -f $SESSION.out
+$TARGETCMD lttng destroy $SESSION 2> /dev/null
+sleep 1
+rm -rf $HOME/lttng-traces
+
+if [ "$TIMEOUT" != "" ]; then
+    echo LTTNG_NETWORK_SOCKET_TIMEOUT=$TIMEOUT
+    export LTTNG_NETWORK_SOCKET_TIMEOUT=$TIMEOUT
+fi
+
+lttng-relayd $VERBOSE -L net://localhost:5344 &
+lttng_relayd_pid=$!
+
+$TARGETCMD lttng create $SESSION -U net://$HOSTIP --live 1000000
+$TARGETCMD lttng enable-channel $SESSION-channel -u -s $SESSION
+$TARGETCMD lttng enable-event -a -u -c $SESSION-channel -s $SESSION
+$TARGETCMD lttng list $SESSION
+
+babeltrace -i lttng-live net://localhost/host/$TARGETNAME/$SESSION > $SESSION.out &
+
+$TARGETCMD lttng start $SESSION
+$TARGETCMD $TESTAPP $NO_OF_EVENTS
+sleep 5
+$TARGETCMD lttng stop $SESSION
+sleep 10
+$TARGETCMD lttng destroy $SESSION
+
+no_of_events=$(grep tptest $SESSION.out | wc -l)
+if [ "$no_of_events" = "$NO_OF_EVENTS" ]; then
+    echo -e "\nTEST PASSED\n"
+else
+    echo -e "\nTEST FAILED, got $no_of_events and expected $NO_OF_EVENTS\n"
+fi
+
+sleep 1
+kill $lttng_relayd_pid

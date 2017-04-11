@@ -3,8 +3,9 @@ LTTNG_TAGS		?= rcs 2.7 2.8 2.9
 LTTNG_TAG		?= rcs
 LTTNG_IMAGE		= lttng:$(LTTNG_TAG)
 LTTNG_CONTAINER		= lttng_$(LTTNG_TAG)
-
+LTTNG_HOSTIP		= $(shell /sbin/ifconfig | grep 128.224 | cut -d: -f 2 | cut -d' ' -f 1)
 ################################################################
+
 lttng.build: # Build lttng image
 	$(TRACE)
 	$(CP) $(HOME)/.gitconfig lttng/
@@ -20,7 +21,10 @@ lttng.prepare:
 	$(TRACE)
 	$(eval host_timezone=$(shell cat /etc/timezone))
 	$(DOCKER) start $(LTTNG_CONTAINER)
-	$(DOCKER) exec -u root $(LTTNG_CONTAINER) sh -c "echo $(host_timezone) >/etc/timezone && ln -sf /usr/share/zoneinfo/$(host_timezone) /etc/localtime && dpkg-reconfigure -f noninteractive tzdata"
+	$(DOCKER) exec -u root $(LTTNG_CONTAINER) \
+		sh -c "echo $(host_timezone) >/etc/timezone && ln -sf /usr/share/zoneinfo/$(host_timezone) /etc/localtime && dpkg-reconfigure -f noninteractive tzdata"
+	$(DOCKER) exec $(LTTNG_CONTAINER) \
+		sh -c "if [ ! -e /root/.ssh/id_rsa ]; then ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ''; fi"
 	$(DOCKER) stop $(LTTNG_CONTAINER)
 
 lttng.create: lttng.build.$(LTTNG_TAG) # Create a lttng container
@@ -62,7 +66,11 @@ lttng.RMI: # Remove ALL lttng image
 
 lttng.shell: # Start a shell in lttng container
 	$(TRACE)
-	$(DOCKER) exec -it $(LTTNG_CONTAINER) /bin/bash
+	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "export HOSTIP=$(LTTNG_HOSTIP); /bin/bash"
+
+lttng.run: # run test-live in lttng container
+	$(TRACE)
+	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "export HOSTIP=$(LTTNG_HOSTIP); /root/test-live"
 
 lttng.update: # Update lttng in the container
 	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "cd lttng-test; git pull; make repo.pull"

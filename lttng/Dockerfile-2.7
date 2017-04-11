@@ -8,4 +8,8 @@ RUN (cd lttng-test; make install.lttng-ust)
 RUN (cd lttng-test; make install.lttng-tools)
 RUN (cd lttng-test; make install babeltrace)
 
-#EXPOSE 5342 5343 5344
+RUN apt-get install -y vim sshpass
+
+ADD lttng/test-live /root/test-live
+RUN mkdir -p /root/.ssh
+ADD lttng/ssh.config /root/.ssh/config
