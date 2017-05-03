@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+    TARGETS="amarillo1 victoria2"
+else
+    TARGETS=$1
+fi
+export TIMEOUT=10000
+export TARGETUSER=lttnguser
+
+OUTDIR=$PWD/targettest.out
+mkdir -p $OUTDIR
+
+for target in $TARGETS; do
+  echo "Live test started on $target"
+  export TARGETIP=$target
+  $(./test-live -v run &> $OUTDIR/$target.out) & pid=$!
+  PID_LIST+="$pid "
+done
+
+echo waiting for test to end $PID_LIST
+wait $PID_LIST
+
+for target in $TARGETS; do
+    grep TEST $OUTDIR/$target.out
+done
