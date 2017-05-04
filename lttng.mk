@@ -40,6 +40,9 @@ lttng.create: lttng.build.$(LTTNG_TAG) # Create a lttng container
 	$(MAKE) lttng.prepare
 	$(MKSTAMP)
 
+lttng.CREATE: # Remove ALL lttng container
+	$(foreach tag, $(LTTNG_TAGS), make -s lttng.create LTTNG_TAG=$(tag); )
+
 lttng.start: lttng.create # Start lttng container
 	$(TRACE)
 	$(DOCKER) start $(LTTNG_CONTAINER)
@@ -63,6 +66,8 @@ lttng.rmi: # Remove lttng image
 
 lttng.RMI: # Remove ALL lttng image
 	$(foreach tag, $(LTTNG_TAGS), make -s lttng.rmi LTTNG_TAG=$(tag); )
+	$(DOCKER) rmi lttng
+	$(call rmstamp,lttng.build)
 
 lttng.shell: # Start a shell in lttng container
 	$(TRACE)
@@ -84,8 +89,14 @@ lttng.tag:
 lttng.push: lttng.tag # Push image to local registry
 	$(DOCKER) push $(REGISTRY_SERVER)/$(LTTNG_IMAGE)
 
+lttng.PUSH: # Remove ALL lttng container
+	$(foreach tag, $(LTTNG_TAGS), make -s lttng.push LTTNG_TAG=$(tag); )
+
 lttng.pull: # Pull image from local registry
 	$(DOCKER) pull $(REGISTRY_SERVER)/$(LTTNG_IMAGE)
+
+lttng.PULL: # Remove ALL lttng container
+	$(foreach tag, $(LTTNG_TAGS), make -s lttng.pull LTTNG_TAG=$(tag); )
 
 pull:: lttng.pull
 
