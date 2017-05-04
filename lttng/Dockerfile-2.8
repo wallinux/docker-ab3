@@ -10,6 +10,5 @@ RUN (cd lttng-test; make install babeltrace)
 
 RUN apt-get install -y vim sshpass
 
-ADD lttng/test-live /root/test-live
 RUN mkdir -p /root/.ssh
 ADD lttng/ssh.config /root/.ssh/config

@@ -68,9 +68,9 @@ lttng.shell: # Start a shell in lttng container
 	$(TRACE)
 	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "export HOSTIP=$(LTTNG_HOSTIP); /bin/bash"
 
-lttng.run: # run test-live in lttng container
+lttng.run: # run targettest in lttng container
 	$(TRACE)
-	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "export HOSTIP=$(LTTNG_HOSTIP); /root/test-live"
+	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "export HOSTIP=$(LTTNG_HOSTIP); /root/lttng-test/test/test-live/targettest amarillo1"
 
 lttng.update: # Update lttng in the container
 	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "cd lttng-test; git pull; make repo.pull"
