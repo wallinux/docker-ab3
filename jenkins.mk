@@ -3,6 +3,7 @@
 
 JENKINS_IMAGE 	  = jenkins
 JENKINS_CONTAINER = rcs_eprime_jenkins
+JENKINS_TAG 	  = $(JENKINS_CONTAINER)
 JENKINS_PORT	  = 8091
 JENKINS_HOME	  = /var/jenkins_home
 JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -s http://127.0.0.1:$(JENKINS_PORT)/
@@ -12,6 +13,9 @@ JENKINS_OPTS	  = --httpPort=$(JENKINS_PORT)
 
 jenkins.prepare:
 	$(TRACE)
+	$(eval users_gid=$(shell getent group users  | cut -d: -f3))
+	$(eval docker_gid=$(shell getent group docker | cut -d: -f3))
+	$(eval host_timezone=$(shell cat /etc/timezone))
 	$(DOCKER) start $(JENKINS_CONTAINER)
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get update
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get install make bsdmainutils
@@ -20,13 +24,11 @@ jenkins.prepare:
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) usermod -aG docker jenkins
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) sh -c "echo $(host_timezone) >/etc/timezone && ln -sf /usr/share/zoneinfo/$(host_timezone) /etc/localtime && dpkg-reconfigure -f noninteractive tzdata"
 	$(DOCKER) stop $(JENKINS_CONTAINER)
+	$(DOCKER) commit $(JENKINS_CONTAINER) jenkins:$(JENKINS_TAG)
 
 jenkins.create: # Create jenkins container
 	$(TRACE)
 	$(eval docker_bin=$(shell which docker))
-	$(eval docker_gid=$(shell getent group docker | cut -d: -f3))
-	$(eval users_gid=$(shell getent group users  | cut -d: -f3))
-	$(eval host_timezone=$(shell cat /etc/timezone))
 	$(DOCKER) create -P --name $(JENKINS_CONTAINER) \
 		-v $(JENKINS_HOME):$(JENKINS_HOME):shared \
 		-v /var/run/docker.sock:/var/run/docker.sock \
@@ -92,6 +94,10 @@ jenkins.rootshell: # Start a shell as root user in jenkins container
 jenkins.dockertest: # Test to run a docker image inside jenkins
 	$(TRACE)
 	$(DOCKER) exec -it $(JENKINS_CONTAINER) docker run --rm hello-world
+
+jenkins.push: # Push image to local registry
+	$(DOCKER) tag $(JENKINS_IMAGE):$(JENKINS_TAG) $(REGISTRY_SERVER)/$(JENKINS_IMAGE):$(JENKINS_TAG)
+	$(DOCKER) push $(REGISTRY_SERVER)/$(JENKINS_IMAGE):$(JENKINS_TAG)
 
 jenkins.pull:
 	$(TRACE)
