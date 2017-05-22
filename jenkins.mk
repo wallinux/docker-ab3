@@ -18,7 +18,7 @@ jenkins.prepare:
 	$(eval host_timezone=$(shell cat /etc/timezone))
 	$(DOCKER) start $(JENKINS_CONTAINER)
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get update
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get install make bsdmainutils
+	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get install make bsdmainutils libltdl7
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) usermod -g users jenkins
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) groupadd --gid $(docker_gid) docker
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) usermod -aG docker jenkins
@@ -38,7 +38,6 @@ jenkins.create: # Create jenkins container
 		--dns=128.224.92.11 \
 		--dns-search=wrs.com \
 		-p $(JENKINS_PORT):$(JENKINS_PORT) \
-		-p 50000:50000 \
 		-e "JENKINS_OPTS=$(JENKINS_OPTS)" \
 		-it $(JENKINS_IMAGE)
 	$(MAKE) jenkins.prepare
