@@ -8,7 +8,5 @@ RUN (cd lttng-test; make install.lttng-ust)
 RUN (cd lttng-test; make install.lttng-tools)
 RUN (cd lttng-test; make install babeltrace)
 
-RUN apt-get install -y vim sshpass
-
 RUN mkdir -p /root/.ssh
 ADD lttng/ssh.config /root/.ssh/config
