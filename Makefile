@@ -8,7 +8,7 @@ include common.mk
 
 include registry.mk
 include lttng.mk
-include gitea.mk
+#include gitea.mk
 include wrlinux.mk
 include jenkins.mk
 
