@@ -54,11 +54,11 @@ jenkins.stop: # Stop jenkins container
 jenkins.rm: # Remove jenkins container
 	$(TRACE)
 	$(DOCKER) rm $(JENKINS_CONTAINER)
-	$(call rmstamp,jenkins.create)
 
 jenkins.rmi: # Remove jenkins image
 	$(TRACE)
-	$(DOCKER) rm $(JENKINS_IMAGE)
+	$(DOCKER) rmi $(JENKINS_IMAGE):$(JENKINS_TAG)
+	$(call rmstamp,jenkins.create)
 
 jenkins.update.apt: jenkins.start
 	$(TRACE)
