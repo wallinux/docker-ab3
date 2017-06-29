@@ -30,7 +30,7 @@ jenkins.create: # Create jenkins container
 	$(TRACE)
 	$(eval docker_bin=$(shell which docker))
 	$(DOCKER) create -P --name $(JENKINS_CONTAINER) \
-		-v $(JENKINS_HOME):$(JENKINS_HOME):shared \
+		-v $(JENKINS_HOME):$(JENKINS_HOME) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(docker_bin):/usr/bin/docker \
 		-h jenkins.eprime.com \
