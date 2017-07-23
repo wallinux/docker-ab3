@@ -1,7 +1,7 @@
 FROM saxofon/wrlinux_builder:9
 MAINTAINER Anders Wallin
 
-ENV TERM vt100
+ENV TERM xterm
 
 RUN dpkg --add-architecture i386
 RUN apt-get update

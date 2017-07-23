@@ -3,7 +3,7 @@ MAINTAINER Anders Wallin
 
 WORKDIR /root
 
-ENV TERM vt100
+ENV TERM xterm
 ENV HOME /root
 ENV DEBIAN_FRONTEND noninteractive
 
