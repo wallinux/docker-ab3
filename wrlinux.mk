@@ -1,20 +1,34 @@
 # wrlinux.mk
 
-WRLINUX_REMOTE_IMAGE	+= saxofon/wrlinux_builder
-WRLINUX_IMAGE		+= wrlinux_builder
-WRLINUX_TAG		?= 8-Ubuntu16.04
+WRLINUX_DISTRO		?= ubuntu
+WRLINUX_DISTRO_TAG	?= 16.04
+
+WRLINUX_IMAGE		= wrlinux_800
+WRLINUX_TAG		= $(WRLINUX_DISTRO)-$(WRLINUX_DISTRO_TAG)
 WRLINUX_CONTAINER	= $(WRLINUX_IMAGE)_$(WRLINUX_TAG)
+
+WIND_INSTALL_BASE 	?= /opt/projects/ericsson/installs
+WIND_LX_HOME		= $(WIND_INSTALL_BASE)/$(WRLINUX_IMAGE)
+WRLINUX_PKG_INSTALL	?= $(WIND_LX_HOME)/wrlinux-8/scripts/host_package_install.sh
 
 ################################################################
 
 wrlinux.build.%: # Build wrlinux image
 	$(TRACE)
-	$(DOCKER) build -f wrlinux/Dockerfile -t "$(WRLINUX_IMAGE):$*" .
+	$(Q)cp $(WRLINUX_PKG_INSTALL) $(TOP)/wrlinux/$(WRLINUX_IMAGE)-pkg_install.sh
+	$(Q)sed -i 's/sudo //' $(TOP)/wrlinux/$(WRLINUX_IMAGE)-pkg_install.sh
+	$(DOCKER) build --pull -f wrlinux/Dockerfile.$(WRLINUX_IMAGE) \
+		-t "$(WRLINUX_IMAGE):$*" \
+		--build-arg IMAGENAME=$(WRLINUX_DISTRO):$(WRLINUX_DISTRO_TAG) .
 	$(MKSTAMP)
+
+wrlinux.build: wrlinux.build.$(WRLINUX_TAG)
+	$(TRACE)
 
 wrlinux.create: wrlinux.build.$(WRLINUX_TAG) # Create a wrlinux container
 	$(TRACE)
 	$(DOCKER) create -P --name=$(WRLINUX_CONTAINER) \
+		-v $(WIND_LX_HOME):$(WIND_LX_HOME):ro \
 		-h wrlinux.eprime.com \
 		--dns=8.8.8.8 \
 		-i \
@@ -27,7 +41,7 @@ wrlinux.start: wrlinux.create # Start wrlinux container
 
 wrlinux.shell: # Start a shell in wrlinux container
 	$(TRACE)
-	$(DOCKER) exec -it $(WRLINUX_CONTAINER) sh -c "/bin/bash"
+	$(DOCKER) exec -it $(WRLINUX_CONTAINER) sh -c "/bin/sh"
 
 wrlinux.stop: # Stop wrlinux container
 	$(TRACE)
@@ -51,7 +65,6 @@ wrlinux.push: wrlinux.tag # Push wrlinux image to local registry
 
 wrlinux.pull: # Update all wrlinux images
 	$(TRACE)
-	$(DOCKER) pull -a $(WRLINUX_REMOTE_IMAGE)
 	$(DOCKER) pull $(REGISTRY_SERVER)/$(WRLINUX_IMAGE):$(WRLINUX_TAG)
 
 wrlinux.help:
