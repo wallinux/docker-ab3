@@ -9,7 +9,7 @@ LTTNG_HOSTIP		= $(shell /sbin/ifconfig | grep 128.224 | cut -d: -f 2 | cut -d' '
 lttng.build: # Build lttng image
 	$(TRACE)
 	$(CP) $(HOME)/.gitconfig lttng/
-	$(DOCKER) build -f lttng/Dockerfile -t "lttng" .
+	$(DOCKER) build --pull -f lttng/Dockerfile -t "lttng" .
 	$(MKSTAMP)
 
 lttng.build.% : lttng.build # Build lttng.$(LTTNG_TAG) image
