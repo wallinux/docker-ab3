@@ -15,7 +15,7 @@ gitea.create: # Create a gitea container
 	-it $(GITEA_IMAGE)
 	$(MKSTAMP)
 
-gitea.start: gitea.start #Start gitea container
+gitea.start: gitea.create # Start gitea container
 	$(TRACE)
 	$(DOCKER) start $(GITEA_CONTAINER)
 
