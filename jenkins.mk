@@ -1,6 +1,7 @@
 # jenkins.mk
 ################################################################
 
+JENKINS_REMOTE_IMAGE = jenkins/jenkins:lts
 JENKINS_IMAGE 	  = jenkins
 JENKINS_CONTAINER = rcs_eprime_jenkins
 JENKINS_TAG 	  = $(JENKINS_CONTAINER)
@@ -24,7 +25,7 @@ jenkins.prepare:
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) usermod -aG docker jenkins
 	$(DOCKER) exec -u root $(JENKINS_CONTAINER) sh -c "echo $(host_timezone) >/etc/timezone && ln -sf /usr/share/zoneinfo/$(host_timezone) /etc/localtime && dpkg-reconfigure -f noninteractive tzdata"
 	$(DOCKER) stop $(JENKINS_CONTAINER)
-	$(DOCKER) commit $(JENKINS_CONTAINER) jenkins:$(JENKINS_TAG)
+	$(DOCKER) commit $(JENKINS_CONTAINER) $(JENKINS_IMAGE):$(JENKINS_TAG)
 
 jenkins.create: # Create jenkins container
 	$(TRACE)
@@ -39,7 +40,7 @@ jenkins.create: # Create jenkins container
 		--dns-search=wrs.com \
 		-p $(JENKINS_PORT):$(JENKINS_PORT) \
 		-e "JENKINS_OPTS=$(JENKINS_OPTS)" \
-		-it $(JENKINS_IMAGE)
+		-it $(JENKINS_REMOTE_IMAGE)
 	$(MAKE) jenkins.prepare
 	$(MKSTAMP)
 
@@ -94,13 +95,9 @@ jenkins.dockertest: # Test to run a docker image inside jenkins
 	$(TRACE)
 	$(DOCKER) exec -it $(JENKINS_CONTAINER) docker run --rm hello-world
 
-jenkins.push: # Push image to local registry
-	$(DOCKER) tag $(JENKINS_IMAGE):$(JENKINS_TAG) $(REGISTRY_SERVER)/$(JENKINS_IMAGE):$(JENKINS_TAG)
-	$(DOCKER) push $(REGISTRY_SERVER)/$(JENKINS_IMAGE):$(JENKINS_TAG)
-
 jenkins.pull:
 	$(TRACE)
-	$(DOCKER) pull $(JENKINS_IMAGE)
+	$(DOCKER) pull $(JENKINS_REMOTE_IMAGE)
 
 pull:: jenkins.pull
 	$(TRACE)
