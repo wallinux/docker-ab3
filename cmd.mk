@@ -1,5 +1,6 @@
 # cmd.mk
 
+MAKE	= $(Q)make -s
 ECHO 	= $(Q)echo
 DOCKER	= $(Q)docker
 MKDIR	= $(Q)mkdir -p

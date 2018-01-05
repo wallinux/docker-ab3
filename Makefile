@@ -19,11 +19,11 @@ pull:: # Update all images
 
 docker.rm: # Remove all dangling containers
 	$(TRACE)
-	$(DOCKER) ps -q | xargs echo
+	$(DOCKER) ps -qa --filter "status=exited" | xargs docker rm
 
 docker.rmi: # Remove all dangling images
 	$(TRACE)
-	$(DOCKER) images -q -f dangling=true | xargs echo
+	$(DOCKER) images -q -f dangling=true | xargs docker rmi
 
 clean:
 	$(RM) -r $(STAMPSDIR)

@@ -39,5 +39,4 @@ define rmstamp
 	$(RM) $(STAMPSDIR)/$(1) 
 endef
 
-
 -include cmd.mk
