@@ -1,0 +1,16 @@
+#!/bin/bash
+cd net-snmp
+./configure --prefix=/usr \
+                --with-persistent-directory=/var/lib/net-snmp \
+                --with-mib-modules='smux tlstm-mib tsm-mib examples/example examples/notification' \
+                --with-security-modules="tsm" \
+                --with-transports="TLSTCP DTLSUDP" \
+                --enable-shared \
+                --with-defaults \
+                --enable-ipv6 \
+                --disable-embedded-perl \
+                --with-perl-modules=no \
+                --without-elf
+make
+make install
+
