@@ -16,7 +16,7 @@ TOP	:= $(shell pwd)
 
 # Define V=1 to echo everything
 ifneq ($(V),1)
-Q=@
+export Q=@
 endif
 
 .PHONY: *.help
