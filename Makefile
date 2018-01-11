@@ -1,5 +1,3 @@
-# arn-build3 docker
-
 default: help
 
 include common.mk
@@ -7,10 +5,11 @@ include common.mk
 ################################################################
 
 include registry.mk
+include network.mk
 include lttng.mk
 include snmp.mk
-include gitea.mk
-include gitlab.mk
+#include gitea.mk
+#include gitlab.mk
 include wrlinux_builder.mk
 include wrlinux.mk
 include jenkins.mk
