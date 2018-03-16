@@ -1,8 +1,7 @@
-DOCKER_NETWORK_1 = network_1
-DOCKER_NETWORK_2 = network_2
-DOCKER_NETWORKS	 = $(DOCKER_NETWORK_1) $(DOCKER_NETWORK_2)
-
+DOCKER_NETWORK_1 = snmp_network_1
+DOCKER_NETWORK_2 = snmp_network_2
 DOCKER_NETWORK	 ?= $(DOCKER_NETWORK_1)
+DOCKER_NETWORKS	 = $(DOCKER_NETWORK_1) $(DOCKER_NETWORK_2)
 
 ################################################################
 
@@ -18,7 +17,6 @@ network.rm: # Remove docker networks
 network.connect.%: # Connect network to container=%
 	$(TRACE)
 	$(DOCKER) network connect $(DOCKER_NETWORK) $*
-
 
 network.disconnect.%: # Disconnect network to container=%
 	$(TRACE)

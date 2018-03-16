@@ -1,5 +1,5 @@
 # lttng.mk
-LTTNG_TAGS		?= rcs 2.7 2.8 2.9 2.10
+LTTNG_TAGS		?= rcs 2.8 2.9 2.10
 LTTNG_TAG		?= rcs
 LTTNG_IMAGE		= lttng:$(LTTNG_TAG)
 LTTNG_CONTAINER		= lttng_$(LTTNG_TAG)

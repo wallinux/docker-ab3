@@ -17,7 +17,7 @@ RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y git libpopt-dev uuid-dev 
 RUN (git clone git://git.code.sf.net/p/net-snmp/code net-snmp)
 RUN (cd net-snmp; git remote add wayline git://git.code.sf.net/u/wayline/net-snmp; git fetch --all)
 
-RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y libssl-dev net-tools psmisc gdb strace tcpdump iputils-ping ssh sshpass
+RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y libssl-dev net-tools psmisc gdb strace tcpdump iputils-ping ssh sshpass tig
 RUN (sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config)
 RUN (echo root:root | chpasswd)
 RUN (mkdir /root/.ssh)
