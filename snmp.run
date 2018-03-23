@@ -1,0 +1,87 @@
+#!/bin/sh
+
+if [ $# > 1 ]; then
+    SNMP_TAG=WR8_prime
+else
+    SNMP_TAG=$2
+fi
+
+SNMP_IMAGE=wallinux/snmp:$SNMP_TAG
+
+function create_container ()
+{
+    container=$1
+    echo "create and start $container"
+    
+    docker create -P --name=$container \
+	   -h $container.eprime.com \
+	   --network=snmp_network_1 \
+	   --dns=8.8.8.8 \
+	   --privileged=true \
+	   -i $SNMP_IMAGE
+    host_timezone=$(cat /etc/timezone)
+    docker start $container
+    docker exec -u root $container \
+	   sh -c "echo $host_timezone >/etc/timezone && ln -sf /usr/share/zoneinfo/$host_timezone /etc/localtime && dpkg-reconfigure -f noninteractive tzdata"
+    docker exec $container \
+	   sh -c "if [ ! -e /root/.ssh/id_rsa ]; then ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ''; fi"
+    docker exec $container \
+	   sh -c "rmdir snmp-test; git clone https://github.com/wallinux/snmp_test.git"
+    docker exec -it $container sh -c "/etc/init.d/ssh start"
+}
+
+function start ()
+{
+    echo "creating snmp_network_1 and snmp_network_2"
+    docker network create --ipv6 --driver=bridge snmp_network_1 --subnet=172.19.0.0/24 --subnet=2001:db8:2::/64
+    docker network create --ipv6 --driver=bridge snmp_network_2 --subnet=172.19.1.0/24 --subnet=2001:db8:3::/64
+
+    create_container snmp_0_$SNMP_TAG
+    create_container snmp_1_$SNMP_TAG
+}
+
+function stop ()
+{
+    echo "stoping snmp_0_$SNMP_TAG and snmp_1_$SNMP_TAG"
+    docker stop snmp_0_$SNMP_TAG
+    docker stop snmp_1_$SNMP_TAG
+
+    docker rm snmp_0_$SNMP_TAG
+    docker rm snmp_1_$SNMP_TAG
+
+    echo "removing snmp_network_1 and snmp_network_2"
+    docker network rm snmp_network_1
+    docker network rm snmp_network_2
+}
+
+function shell ()
+{
+    docker exec -it snmp_0_$SNMP_TAG sh -c "/bin/bash"
+}
+
+function terminal ()
+{
+    gnome-terminal --command "docker exec -it snmp_0_$SNMP_TAG sh -c \"/bin/bash\"" &
+}
+
+function test1 ()
+{
+    docker exec -it snmp_0_$SNMP_TAG bash -c "cd snmp_test; source ./docker_config; ./snmp_test -h; ./snmp_test -C"
+}
+
+function test2 ()
+{
+    docker exec -it snmp_0_$SNMP_TAG bash -c "cd snmp_test; source ./docker_config; ./snmp_test_trap -h; ./snmp_test_trap -C remote"
+}
+
+if [ $# = 0 ]; then
+    echo "$0 <start|stop|shell|terminal|test> [tag]"
+    echo " start:    start containers (snmp_0_$SNMP_TAG & snmp_1_$SNMP_TAG)"
+    echo " stop:     stop  containers (snmp_0_$SNMP_TAG & snmp_1_$SNMP_TAG)"
+    echo " shell:    connect to container (snmp_0_$SNMP_TAG)"
+    echo " terminal: start gnome-terminal and connect to container (snmp_0_$SNMP_TAG)"
+    echo " test1:    run a simple snmp test in container"
+    echo " test2:    run a simple snmp trap test in container"
+else
+    $1
+fi
