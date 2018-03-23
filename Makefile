@@ -2,6 +2,8 @@ default: help
 
 include common.mk
 
+DOCKER_ID_USER		= wallinux
+
 ################################################################
 
 include registry.mk
