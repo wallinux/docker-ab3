@@ -30,6 +30,11 @@ function create_container ()
     docker exec -it $container sh -c "/etc/init.d/ssh start"
 }
 
+function pull ()
+{
+    docker pull $SNMP_IMAGE
+}
+
 function start ()
 {
     echo "creating snmp_network_1 and snmp_network_2"
@@ -76,6 +81,7 @@ function test2 ()
 
 if [ $# = 0 ]; then
     echo "$0 <start|stop|shell|terminal|test> [tag]"
+    echo " pull:     pull image from $SNMP_IMAGE"
     echo " start:    start containers (snmp_0_$SNMP_TAG & snmp_1_$SNMP_TAG)"
     echo " stop:     stop  containers (snmp_0_$SNMP_TAG & snmp_1_$SNMP_TAG)"
     echo " shell:    connect to container (snmp_0_$SNMP_TAG)"
