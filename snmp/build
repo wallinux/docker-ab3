@@ -1,5 +1,6 @@
 #!/bin/bash
 cd /root/net-snmp
+autoreconf
 ./configure --prefix=/usr \
                 --with-persistent-directory=/var/lib/net-snmp \
                 --with-mib-modules='smux tlstm-mib tsm-mib examples/example examples/notification' \
@@ -10,6 +11,7 @@ cd /root/net-snmp
                 --enable-ipv6 \
                 --disable-embedded-perl \
                 --with-perl-modules=no \
+		--with-cflags="-g -O2"
                 --without-elf
 make
 make install
