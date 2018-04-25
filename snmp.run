@@ -26,7 +26,7 @@ function create_container ()
     docker exec $container \
 	   sh -c "if [ ! -e /root/.ssh/id_rsa ]; then ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ''; fi"
     docker exec $container \
-	   sh -c "rmdir snmp-test; git clone https://github.com/wallinux/snmp_test.git"
+	   sh -c "rm -rf snmp-test; git clone https://github.com/wallinux/snmp_test.git"
     docker exec -it $container sh -c "/etc/init.d/ssh start"
 }
 
@@ -37,7 +37,7 @@ function pull ()
 
 function start ()
 {
-    echo "creating snmp_network_1 and snmp_network_2"
+    echo "create snmp_network_1 and snmp_network_2"
     docker network create --ipv6 --driver=bridge snmp_network_1 --subnet=172.19.0.0/24 --subnet=2001:db8:2::/64
     docker network create --ipv6 --driver=bridge snmp_network_2 --subnet=172.19.1.0/24 --subnet=2001:db8:3::/64
 
@@ -47,7 +47,7 @@ function start ()
 
 function stop ()
 {
-    echo "stoping snmp_0_$SNMP_TAG and snmp_1_$SNMP_TAG"
+    echo "stop snmp_0_$SNMP_TAG and snmp_1_$SNMP_TAG"
     docker stop snmp_0_$SNMP_TAG
     docker stop snmp_1_$SNMP_TAG
 

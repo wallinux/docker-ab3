@@ -11,13 +11,13 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y apt-utils
 RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y git libpopt-dev uuid-dev libxml2-dev automake autoconf libtool flex \
-	bison make libc6 libc6-dev libglib2.0-0 libglib2.0-dev libpopt-dev python-pip python-dev emacs tzdata tmux
+	bison make libc6 libc6-dev libglib2.0-0 libglib2.0-dev libpopt-dev python-pip python-dev emacs tzdata tmux man
 
 # Installing snmp repos
 RUN (git clone git://git.code.sf.net/p/net-snmp/code net-snmp)
 RUN (cd net-snmp; git remote add wayline git://git.code.sf.net/u/wayline/net-snmp; git fetch --all)
 
-RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y libssl-dev net-tools psmisc gdb strace tcpdump iputils-ping ssh sshpass tig
+RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y libssl-dev net-tools psmisc gdb strace tcpdump iputils-ping ssh sshpass tig doxygen
 RUN (sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config)
 RUN (echo root:root | chpasswd)
 RUN (mkdir /root/.ssh)
