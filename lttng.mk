@@ -4,6 +4,7 @@ LTTNG_TAG		?= rcs
 LTTNG_IMAGE		= lttng:$(LTTNG_TAG)
 LTTNG_CONTAINER		= lttng_$(LTTNG_TAG)
 LTTNG_HOSTIP		= $(shell /sbin/ifconfig | grep 128.224 | cut -d: -f 2 | cut -d' ' -f 1)
+LTTNG_HOSTNAME          ?= lttng-$(subst .,_,$(LTTNG_TAG)).eprime.com
 ################################################################
 
 lttng.build: # Build lttng image
@@ -30,7 +31,7 @@ lttng.prepare:
 lttng.create: lttng.build.$(LTTNG_TAG) # Create a lttng container
 	$(TRACE)
 	$(DOCKER) create -P --name=$(LTTNG_CONTAINER) \
-		-h lttng.eprime.com \
+		-h $(LTTNG_HOSTNAME) \
 		--dns=8.8.8.8 \
 		-p 5342:5342 \
 		-p 5343:5343 \
@@ -72,6 +73,10 @@ lttng.RMI: # Remove ALL lttng image
 lttng.shell: # Start a shell in lttng container
 	$(TRACE)
 	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "export HOSTIP=$(LTTNG_HOSTIP); /bin/bash"
+
+lttng.terminal: # Start a gnome-terminal in lttng container
+	$(TRACE)
+	$(Q)gnome-terminal --command "docker exec -it $(LTTNG_CONTAINER) sh -c \" export HOSTIP=$(LTTNG_HOSTIP); /bin/bash\"" &
 
 lttng.run: # run targettest in lttng container
 	$(TRACE)
