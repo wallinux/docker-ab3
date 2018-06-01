@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# > 1 ]; then
+if [ "$#" -ne "2" ]; then
     SNMP_TAG=WR8_prime
 else
     SNMP_TAG=$2
@@ -79,7 +79,8 @@ function test2 ()
     docker exec -it snmp_0_$SNMP_TAG bash -c "cd snmp_test; source ./docker_config; ./snmp_test_trap -h; ./snmp_test_trap -C remote"
 }
 
-if [ $# = 0 ]; then
+function help ()
+{
     echo "$0 <start|stop|shell|terminal|test> [tag]"
     echo " pull:     pull image from $SNMP_IMAGE"
     echo " start:    start containers (snmp_0_$SNMP_TAG & snmp_1_$SNMP_TAG)"
@@ -88,6 +89,11 @@ if [ $# = 0 ]; then
     echo " terminal: start gnome-terminal and connect to container (snmp_0_$SNMP_TAG)"
     echo " test1:    run a simple snmp test in container"
     echo " test2:    run a simple snmp trap test in container"
+    echo " help:     print this text"
+}
+
+if [ $# -eq 0 ]; then
+    help
 else
     $1
 fi

@@ -2,7 +2,7 @@
 
 SNMP_REGISTRY_SERVER	= $(DOCKER_ID_USER)
 SNMP_TAG		?= AW_master
-SNMP_TAGS		= AW_master WR8 WR8_prime WR8_wip
+SNMP_TAGS		= AW_master AW_v5-7 WR8 WR8_prime WR8_wip
 SNMP_REMOTE_IMAGE	?= $(SNMP_REGISTRY_SERVER)/snmp:$(SNMP_TAG)
 SNMP_IMAGE		?= snmp:$(SNMP_TAG)
 SNMP_CONTAINER_0	= snmp_0_$(SNMP_TAG)
@@ -23,13 +23,12 @@ snmp.build.latest: # Build snmp base image
 	$(DOCKER) build --pull -f snmp/Dockerfile -t "snmp" .
 	$(MKSTAMP)
 
-snmp.build.%: snmp.build.latest
+snmp.build.%: snmp.build.latest # Build snmp image for SNMP_TAG
 	$(eval dockerfile=snmp/Dockerfile.$*)
 	$(ECHO) "FROM snmp" > $(dockerfile)
 	$(ECHO) "MAINTAINER Anders Wallin" >> $(dockerfile)
 	$(ECHO) "RUN (cd net-snmp; git fetch --all; git checkout -b $* wayline/$*)" >> $(dockerfile)
-	$(ECHO) 'RUN [ "/bin/bash", "-c", "/root/build |& tee /root/build.out" ]' >> $(dockerfile)
-	$(Q)cat $(dockerfile)
+	$(ECHO) 'RUN [ "/bin/bash", "-c", "/root/build &> /root/build.out" ]' >> $(dockerfile)
 	$(DOCKER) build -f $(dockerfile) -t "snmp:$*" .
 	$(RM) $(dockerfile)
 	$(MAKE) snmp.tag SNMP_TAG=$*
@@ -37,6 +36,19 @@ snmp.build.%: snmp.build.latest
 
 snmp.build.ALL: # Build net-snmp for all images
 	$(Q)$(foreach tag,$(SNMP_TAGS),make snmp.build.$(tag); )
+
+snmp.update.%: # Update snmp image for SNMP_TAG
+	$(eval dockerfile=snmp/Dockerfile.$*)
+	$(MAKE) snmp.build.$*
+	$(ECHO) "FROM snmp:$*" > $(dockerfile)
+	$(ECHO) "MAINTAINER Anders Wallin" >> $(dockerfile)
+	$(ECHO) "RUN (cd net-snmp; git pull; make install > make_install.out)" >> $(dockerfile)
+	$(DOCKER) build -f $(dockerfile) -t "snmp:$*" .
+	$(RM) $(dockerfile)
+	$(MAKE) snmp.tag SNMP_TAG=$*
+
+snmp.update.ALL: # Update net-snmp for all images
+	$(Q)$(foreach tag,$(SNMP_TAGS),make snmp.update.$(tag); )
 
 snmp.prepare.%:
 	$(TRACE)
