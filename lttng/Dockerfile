@@ -19,7 +19,8 @@ RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y asciidoc xmlto groff man
 
 # Installing lttng repos
 RUN (git clone https://github.com/wallinux/lttng-test.git)
-RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y ncurses-bin
+RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y ncurses-bin psmisc
+RUN DEBIAN_FRONTEND=noninteractive; apt-get remove -y libbabeltrace1
 RUN (cd lttng-test; make repo.clone)
 RUN groupadd tracing
 
