@@ -64,7 +64,7 @@ snmp.create.%: network.create
 	$(DOCKER) create -P --name=$* \
 		-h $*.eprime.com \
 		--network=$(DOCKER_NETWORK_1) \
-		--dns=8.8.8.8 \
+		--dns=$(DNS) \
 		-v $(SNMP_GITROOT):/root/snmp-test \
 		--privileged=true \
 		-i \

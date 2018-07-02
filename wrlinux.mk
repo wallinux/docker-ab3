@@ -30,7 +30,7 @@ wrlinux.create: wrlinux.build.$(WRLINUX_TAG) # Create a wrlinux container
 	$(DOCKER) create -P --name=$(WRLINUX_CONTAINER) \
 		-v $(WIND_LX_HOME):$(WIND_LX_HOME):ro \
 		-h wrlinux.eprime.com \
-		--dns=8.8.8.8 \
+		--dns=$(DNS) \
 		-i \
 		$(WRLINUX_IMAGE):$(WRLINUX_TAG)
 	$(MKSTAMP)

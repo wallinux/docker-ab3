@@ -2,7 +2,8 @@ default: help
 
 include common.mk
 
-DOCKER_ID_USER		= wallinux
+DNS		?= 128.224.200.11
+DOCKER_ID_USER	?= wallinux
 
 ################################################################
 

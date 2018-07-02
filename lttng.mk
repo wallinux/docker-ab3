@@ -32,7 +32,7 @@ lttng.create: lttng.build.$(LTTNG_TAG) # Create a lttng container
 	$(TRACE)
 	$(DOCKER) create -P --name=$(LTTNG_CONTAINER) \
 		-h $(LTTNG_HOSTNAME) \
-		--dns=8.8.8.8 \
+		--dns=$(DNS) \
 		-p 5342:5342 \
 		-p 5343:5343 \
 		-p 5344:5344 \

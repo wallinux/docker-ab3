@@ -36,7 +36,7 @@ jenkins.create: # Create jenkins container
 		-v $(docker_bin):/usr/bin/docker \
 		-h jenkins.eprime.com \
 		-u jenkins \
-		--dns=128.224.92.11 \
+		--dns=$(DNS) \
 		--dns-search=wrs.com \
 		-p $(JENKINS_PORT):$(JENKINS_PORT) \
 		-e "JENKINS_OPTS=$(JENKINS_OPTS)" \

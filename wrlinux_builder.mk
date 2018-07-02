@@ -19,7 +19,7 @@ wrlinux_builder.create: wrlinux_builder.build.$(WRLINUX_BUILDER_TAG) # Create a 
 	$(TRACE)
 	$(DOCKER) create -P --name=$(WRLINUX_BUILDER_CONTAINER) \
 		-h wrlinux_builder.eprime.com \
-		--dns=8.8.8.8 \
+		--dns=$(DNS) \
 		-i \
 		$(WRLINUX_BUILDER_IMAGE):$(WRLINUX_BUILDER_TAG)
 	$(MKSTAMP)
