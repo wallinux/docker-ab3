@@ -1,7 +1,8 @@
 # jenkins.mk
 ################################################################
 
-JENKINS_REMOTE_IMAGE = jenkins/jenkins:lts
+JENKINS_REMOTE_TAG ?= lts
+JENKINS_REMOTE_IMAGE = jenkins/jenkins:$(JENKINS_REMOTE_TAG)
 JENKINS_IMAGE 	  = jenkins
 JENKINS_CONTAINER = rcs_eprime_jenkins
 JENKINS_TAG 	  = $(JENKINS_CONTAINER)
@@ -9,8 +10,14 @@ JENKINS_PORT	  = 8091
 JENKINS_HOME	  = /var/jenkins_home
 JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -s http://127.0.0.1:$(JENKINS_PORT)/
 JENKINS_OPTS	  = --httpPort=$(JENKINS_PORT)
-
+JENKINS_LOG	  = log.properties
 ################################################################
+
+jenkins.log:
+	$(MKDIR) -p jenkins/
+	$(ECHO) "handlers=java.util.logging.ConsoleHandler" > jenkins/$(JENKINS_LOG)
+	$(ECHO) "jenkins.level=FINEST" >> jenkins/$(JENKINS_LOG)
+	$(ECHO) "java.util.logging.ConsoleHandler.level=FINEST" >> jenkins/$(JENKINS_LOG)
 
 jenkins.prepare:
 	$(TRACE)
@@ -51,6 +58,10 @@ jenkins.start: jenkins.create # Start jenkins container
 jenkins.stop: # Stop jenkins container
 	$(TRACE)
 	$(DOCKER) stop $(JENKINS_CONTAINER)
+
+jenkins.logs: # Show jenkins container logs
+	$(TRACE)
+	$(DOCKER) logs $(JENKINS_CONTAINER)
 
 jenkins.rm: # Remove jenkins container
 	$(TRACE)
