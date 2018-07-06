@@ -16,6 +16,7 @@ include snmp.mk
 include wrlinux_builder.mk
 include wrlinux.mk
 include jenkins.mk
+include u-boot.mk
 
 pull:: # Update all images
 	$(TRACE)
