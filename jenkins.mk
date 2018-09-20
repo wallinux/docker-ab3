@@ -4,8 +4,8 @@
 ## jenkins after 2.116 is not working with a cpuset bigger then 64
 
 
-#JENKINS_REMOTE_TAG ?= 2.116
-JENKINS_REMOTE_TAG ?= lts
+JENKINS_REMOTE_TAG ?= 2.121.3
+#JENKINS_REMOTE_TAG ?= lts
 JENKINS_REMOTE_IMAGE = jenkins/jenkins:$(JENKINS_REMOTE_TAG)
 JENKINS_IMAGE 	  = jenkins
 JENKINS_CONTAINER = rcs_eprime_jenkins
@@ -14,6 +14,8 @@ JENKINS_PORT	  ?= 8091
 JENKINS_HOME	  ?= /var/jenkins_home
 JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -s http://127.0.0.1:$(JENKINS_PORT)/
 WR_INSTALLS	  = /wr/installs
+#		-v $(WR_INSTALLS):$(WR_INSTALLS) \
+
 JENKINS_OPTS	  = --httpPort=$(JENKINS_PORT)
 JENKINS_LOG	  = log.properties
 ################################################################
@@ -50,7 +52,6 @@ jenkins.create: # Create jenkins container
 		-u jenkins \
 		--dns=$(DNS) \
 		--dns-search=wrs.com \
-		-v $(WR_INSTALLS):$(WR_INSTALLS) \
 		-p $(JENKINS_PORT):$(JENKINS_PORT) \
 		-e "JENKINS_OPTS=$(JENKINS_OPTS)" \
 		--cpuset-cpus=0-63 \
