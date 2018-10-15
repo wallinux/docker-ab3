@@ -1,0 +1,5 @@
+#!/bin/bash
+
+openssl version
+openssl s_client -connect localhost:636 -debug -CAfile CAchain.pem -cert malte_key_and_cert_brainpoolP160r1.pem -verify 2
+
