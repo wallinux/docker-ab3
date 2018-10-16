@@ -26,10 +26,9 @@ openldap.all:  # Download image and run tests
 
 openldap.prepare:
 	$(TRACE)
-	$(eval host_timezone=$(shell cat /etc/timezone))
 	$(DOCKER) start $(OPENLDAP_CONTAINER)
 	$(DOCKER) exec -u root $(OPENLDAP_CONTAINER) apt-get update
-	$(DOCKER) exec -u root $(OPENLDAP_CONTAINER) apt-get install -y net-tools tree
+	$(DOCKER) exec -u root $(OPENLDAP_CONTAINER) apt-get install -y net-tools tree tcpdump
 
 openldap.create:
 	$(TRACE)
@@ -99,6 +98,12 @@ openldap.shell: # Start a shell in openldap container
 openldap.terminal: # Start a gnome-terminal in openldap container
 	$(TRACE)
 	$(Q)gnome-terminal --command "docker exec -it $(OPENLDAP_CONTAINER) sh -c \"/bin/bash\"" &
+
+openldap.clean: # Stop and remove openldap images/containers
+	$(MAKE) -i openldap.stop
+	$(MAKE) -i openldap.rm
+	$(MAKE) -i openldap.rmi
+	$(RM) -r out
 
 openldap.help:
 	$(TRACE)
