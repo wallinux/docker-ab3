@@ -32,7 +32,7 @@ openldap.create:
 		--env LDAP_TLS_CRT_FILENAME=ldapserver.crt \
 		--env LDAP_TLS_KEY_FILENAME=ldapserver.key \
 		--env LDAP_TLS_CA_CRT_FILENAME=CAchain.pem \
-		--env LDAP_LOG_LEVEL=255 \
+		--env LDAP_LOG_LEVEL=-1 \
 		-i \
 		$(OPENLDAP_REMOTE_IMAGE) --loglevel debug
 
