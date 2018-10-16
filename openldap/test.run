@@ -1,5 +1,9 @@
 #!/bin/bash
 
+CERTDIR=$(dirname $(realpath $0))/certs
+#DEBUG=-debug
+echo -e "$ openssl version"
 openssl version
-openssl s_client -connect localhost:636 -debug -CAfile CAchain.pem -cert malte_key_and_cert_brainpoolP160r1.pem -verify 2
 
+echo -e "\n$ openssl s_client -connect localhost:636 $DEBUG -CAfile $CERTDIR/CAchain.pem -cert $CERTDIR/malte_key_and_cert_brainpoolP160r1.pem -verify 2"
+openssl s_client -connect localhost:636 $DEBUG -CAfile $CERTDIR/CAchain.pem -cert $CERTDIR/malte_key_and_cert_brainpoolP160r1.pem -verify 2
