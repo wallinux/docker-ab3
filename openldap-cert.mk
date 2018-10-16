@@ -90,12 +90,12 @@ openldap.cert.list:
 
 #if 1
 BP=brainpoolP160r1
-openldap.createcert: # Create certificate
-	$(Q)openssl ecparam -genkey -name $(BP) -out openldap/certs/$(BP)_privatekey.pem
-	$(Q)openssl req -new -x509 -days 365 -subj '/CN=ldap.eprime.com' -key openldap/certs/$(BP)_privatekey.pem -out openldap/certs/$(BP)_cert.pem
-	$(Q)cat openldap/certs/$(BP)_privatekey.pem openldap/certs/$(BP)_cert.pem > openldap/certs/$(BP).pem
+openldap.cert.create: # Create certificate
+	$(Q)openssl ecparam -genkey -name $(BP) -out openldap/certs/eprime_$(BP)_privatekey.pem
+	$(Q)openssl req -new -x509 -days 365 -subj '/CN=ldap.eprime.com' -key openldap/certs/eprime_$(BP)_privatekey.pem -out openldap/certs/eprime_$(BP)_cert.pem
+	$(Q)cat openldap/certs/eprime_$(BP)_privatekey.pem openldap/certs/eprime_$(BP)_cert.pem > openldap/certs/eprime_key_and_cert_$(BP).pem
 	#$(Q)openssl x509 -req -CAkey CAchain.pem -CA ca.cert -CAcreateserial -in $t.csr -out $t.cert
-	$(MAKE) openldap.cert.list cert=$(BP).pem
+	$(MAKE) openldap.cert.list cert=openldap/certs/eprime_key_and_cert_$(BP).pem
 
 CERTS=CAchain.pem ldapserverCA.pem ldapserver.crt malte_key_and_cert_brainpoolP160r1.pem
 openldap.listcerts: # List all certificates
