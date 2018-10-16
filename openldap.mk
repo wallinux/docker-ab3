@@ -17,7 +17,7 @@ endef
 
 ################################################################
 
-openldap.all:
+openldap.all:  # Download image and run tests
 	$(MAKE) openldap.pull
 	$(MAKE) openldap.create
 	$(MAKE) openldap.start
@@ -82,10 +82,10 @@ openldap.listcert:
 	$(TRACE)
 	$(Q)$(call listcert, $(cert))
 
-openldap.listcerts:
+openldap.listcerts: # List all certificates
 	$(Q)$(foreach cert,$(CERTS), make -s openldap.listcert cert=openldap/certs/$(cert) ; )
 
-openldap.test:
+openldap.test: # Run tests and compare result
 	$(MKDIR) -p out
 	$(DOCKER) exec $(OPENLDAP_CONTAINER)  sh -c "/root/openldap/test.run" &> out/test.run.out.1.1.0 || true
 	$(Q)./openldap/test.run &> out/test.run.out.1.0.2 || true
