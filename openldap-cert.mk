@@ -1,15 +1,16 @@
 CERTTOOL 	= $(Q)certtool
-CERTDIR 	= $(PWD)/openldap/awcerts
 
-CA_TEMPLATE 	= $(CERTDIR)/ca.cfg
-CA_KEY		= $(CERTDIR)/ca.key
-CA_CERT		= $(CERTDIR)/cacert.pem
+CA_TEMPLATE 	= $(OPENLDAP_CERTDIR)/ca.cfg
+CA_KEY		= $(OPENLDAP_CERTDIR)/ca.key
+CA_CERT		= $(OPENLDAP_CERTDIR)/cacert.pem
 
-SLAPD_TEMPLATE 	= $(CERTDIR)/eprime_slapd.cfg
-SLAPD_KEY	= $(CERTDIR)/eprime_slapd.key
-SLAPD_CERT 	= $(CERTDIR)/eprime_slapd.pem
+SLAPD_TEMPLATE 	= $(OPENLDAP_CERTDIR)/eprime_slapd.cfg
+SLAPD_KEY	= $(OPENLDAP_CERTDIR)/eprime_slapd.key
+SLAPD_CERT 	= $(OPENLDAP_CERTDIR)/eprime_slapd.pem
 
-CERTINFO	= $(CERTDIR)/certinfo.ldif
+CERTINFO	= $(OPENLDAP_CERTDIR)/certinfo.ldif
+
+OPENSSL			= $(Q)openssl
 
 define listcert
 	echo -e "\n--- $(1)"
@@ -22,11 +23,11 @@ define listcertfull
 endef
 
 ###################################################################################
-#if 0
-$(CERTDIR):
+$(OPENLDAP_CERTDIR):
 	$(MKDIR) $@
 
-$(CA_TEMPLATE): | $(CERTDIR)
+ifdef 0
+$(CA_TEMPLATE): | $(OPENLDAP_CERTDIR)
 # 	Create the template file to define the CA
 	$(ECHO) "cn = Eprime Inc" > $@
 	$(ECHO) "ca" >> $@
@@ -48,7 +49,7 @@ $(SLAPD_KEY):
 	#$(Q)chmod 0640 $@
 	#gpasswd -a openldap ssl-cert
 
-$(SLAPD_TEMPLATE): | $(CERTDIR) 
+$(SLAPD_TEMPLATE): | $(OPENLDAP_CERTDIR) 
 #	Create the slapd info file
 	$(ECHO) "organization = Eprime Inc" > $@
 	$(ECHO) "cn = ldap.eprime.com" >> $@
@@ -80,24 +81,24 @@ openldap.certs.lists: # List certificates
 	$(MAKE) openldap.cert.list cert=$(CA_CERT)
 	$(MAKE) openldap.cert.list cert=$(SLAPD_CERT)
 
-openldap.certs.clean:
-	$(RM) -r $(CERTDIR)
-#endif
+endif
 
 openldap.cert.list:
 	$(TRACE)
 	$(Q)$(call listcertfull, $(cert))
 
-#if 1
 BP=brainpoolP160r1
-openldap.cert.create: # Create certificate
-	$(Q)openssl ecparam -genkey -name $(BP) -out openldap/certs/eprime_$(BP)_privatekey.pem
-	$(Q)openssl req -new -x509 -days 365 -subj '/CN=ldap.eprime.com' -key openldap/certs/eprime_$(BP)_privatekey.pem -out openldap/certs/eprime_$(BP)_cert.pem
-	$(Q)cat openldap/certs/eprime_$(BP)_privatekey.pem openldap/certs/eprime_$(BP)_cert.pem > openldap/certs/eprime_key_and_cert_$(BP).pem
-	#$(Q)openssl x509 -req -CAkey CAchain.pem -CA ca.cert -CAcreateserial -in $t.csr -out $t.cert
-	$(MAKE) openldap.cert.list cert=openldap/certs/eprime_key_and_cert_$(BP).pem
+openldap.certs.create: | $(OPENLDAP_CERTDIR) # Create certificate
+	$(OPENSSL) ecparam -genkey -name $(BP) -out $(OPENLDAP_CERTDIR)/eprime_$(BP)_privatekey.pem
+	$(OPENSSL) req -new -x509 -days 365 -subj '/CN=ldap.eprime.com' -key $(OPENLDAP_CERTDIR)/eprime_$(BP)_privatekey.pem -out $(OPENLDAP_CERTDIR)/eprime_$(BP)_cert.pem
+	$(Q)cat $(OPENLDAP_CERTDIR)/eprime_$(BP)_privatekey.pem $(OPENLDAP_CERTDIR)/eprime_$(BP)_cert.pem > $(OPENLDAP_CERTDIR)/eprime_key_and_cert_$(BP).pem
+	#$(OPENSSL) x509 -req -CAkey CAchain.pem -CA ca.cert -CAcreateserial -in $t.csr -out $t.cert
+	$(MAKE) openldap.cert.list cert=$(OPENLDAP_CERTDIR)/eprime_key_and_cert_$(BP).pem
+
+openldap.certs.clean:
+	$(RM) -r $(OPENLDAP_CERTDIR)
 
 CERTS=CAchain.pem ldapserverCA.pem ldapserver.crt malte_key_and_cert_brainpoolP160r1.pem
 openldap.listcerts: # List all certificates
 	$(Q)$(foreach cert,$(CERTS), make -s openldap.cert.list cert=openldap/certs/$(cert) ; )
-#endif
+

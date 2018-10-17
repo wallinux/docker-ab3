@@ -4,27 +4,32 @@ OPENLDAP_IMAGE		= openldap
 OPENLDAP_CONTAINER	= eprime_openldap
 OPENLDAP_TAG		= latest
 
+OPENLDAP_EXEC		= $(DOCKER) exec $(OPENLDAP_CONTAINER)
+OPENLDAP_DIR		= /root/openldap
+OPENLDAP_CERTDIR 	= openldap/newcerts
+
+include openldap-cert.mk
+
 ################################################################
 
-openldap.all:  # Download image and run tests
+openldap.all: # Download image and run tests
 	$(MAKE) openldap.pull
 	$(MAKE) openldap.create
 	$(MAKE) openldap.start
 	$(MAKE) openldap.listcerts
+	$(Q)sleep 5
 	$(MAKE) openldap.test
 
-openldap.prepare:
+openldap.install_pkgs: openldap.start # Install extra packages
 	$(TRACE)
-	$(DOCKER) start $(OPENLDAP_CONTAINER)
-	$(DOCKER) exec -u root $(OPENLDAP_CONTAINER) apt-get update
-	$(DOCKER) exec -u root $(OPENLDAP_CONTAINER) apt-get install -y \
-		net-tools tcpdump gnutls-bin ssl-cert vim
+	$(OPENLDAP_EXEC) apt-get update
+	$(OPENLDAP_EXEC) apt-get install -y net-tools tcpdump gnutls-bin ssl-cert vim
 
 openldap.create:
 	$(TRACE)
 	$(DOCKER) create -P --name=$(OPENLDAP_CONTAINER) \
 		--hostname ldap.example.org \
-		-v $(PWD)/openldap:/root/openldap \
+		-v $(PWD)/openldap:$(OPENLDAP_DIR) \
 		--dns=$(DNS) \
 		-p 636:636 \
 		--privileged=true \
@@ -35,8 +40,6 @@ openldap.create:
 		--env LDAP_LOG_LEVEL=-1 \
 		-i \
 		$(OPENLDAP_REMOTE_IMAGE) --loglevel debug
-
-	$(MAKE) openldap.prepare
 	$(DOCKER) commit $(OPENLDAP_CONTAINER) $(OPENLDAP_IMAGE):$(OPENLDAP_TAG)
 	$(MKSTAMP)
 
@@ -70,18 +73,22 @@ openldap.pull: # Update openldap image
 	$(DOCKER) pull $(OPENLDAP_REMOTE_IMAGE)
 
 openldap.test: # Run tests and compare result
-	$(MKDIR) -p out
-	$(DOCKER) exec $(OPENLDAP_CONTAINER)  sh -c "/root/openldap/test.run" &> out/test.run.out.1.1.0 || true
-	$(Q)./openldap/test.run &> out/test.run.out.1.0.2 || true
-	$(MAKE) openldap.logs &> out/openldap.log
-	$(Q)diff -U 1 out/test.run.out.1.0.2 out/test.run.out.1.1.0 || true
+	$(eval outdir=out/test1)
+	$(MKDIR) $(outdir)
+	$(RM) $(outdir)/*
+	$(OPENLDAP_EXEC) sh -c "$(OPENLDAP_DIR)/test.run" &> $(outdir)/test.run.out.1.1.0 || true
+	$(Q)./openldap/test.run &> $(outdir)/test.run.out.1.0.2 || true
+	$(MAKE) openldap.logs &> $(outdir)/openldap.log
+	$(Q)diff -U 1 $(outdir)/test.run.out.1.0.2 $(outdir)/test.run.out.1.1.0 || true
 
-openldap.test2: # Run tests with $(BP) and compare result
-	$(MKDIR) -p out
-	$(DOCKER) exec $(OPENLDAP_CONTAINER)  sh -c "/root/openldap/test.run $(BP).pem" &> out/test.run.out.1.1.0 || true
-	$(Q)./openldap/test.run $(BP).pem &> out/test.run.out.1.0.2 || true
-	$(MAKE) openldap.logs &> out/openldap.log
-	$(Q)diff -U 1 out/test.run.out.1.0.2 out/test.run.out.1.1.0 || true
+openldap.test2: openldap.certs.create # Run tests with $(BP) and compare result
+	$(eval outdir=out/test2)
+	$(MKDIR) $(outdir)
+	$(RM) $(outdir)/*
+	$(OPENLDAP_EXEC) sh -c "$(OPENLDAP_DIR)/test.run /root/$(OPENLDAP_CERTDIR)/eprime_key_and_cert_$(BP).pem" &> $(outdir)/test.run.out.1.1.0 || true
+	$(Q)./openldap/test.run $(OPENLDAP_CERTDIR)/eprime_key_and_cert_$(BP).pem &> $(outdir)/test.run.out.1.0.2 || true
+	$(MAKE) openldap.logs &> $(outdir)/openldap.log
+	$(Q)diff -U 1 $(outdir)/test.run.out.1.0.2 $(outdir)/test.run.out.1.1.0 || true
 
 openldap.shell: # Start a shell in openldap container
 	$(TRACE)
@@ -105,4 +112,3 @@ help:: openldap.help
 
 pull:: openldap.pull
 
-include openldap-cert.mk
