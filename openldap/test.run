@@ -15,3 +15,7 @@ openssl version
 
 echo -e "\n$ openssl s_client -connect localhost:636 $DEBUG -CAfile $CA -cert $CERT -verify 2"
 openssl s_client -connect localhost:636 $DEBUG -CAfile $CA -cert $CERT -verify 2
+status=$?
+echo -e "\n STATUS=$status"
+
+exit 0
