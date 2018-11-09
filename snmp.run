@@ -1,12 +1,18 @@
 #!/bin/sh
 
+[ "$DISTRO"     = "" ] && DISTRO=ubuntu
+[ "$DISTRO_TAG" = "" ] && DISTRO_TAG=16.04
+DISTRO_NAME=${DISTRO}_${DISTRO_TAG}
+
 if [ "$#" -ne "2" ]; then
-    SNMP_TAG=WR8_prime
+    SNMP_TAG=AW_master
 else
     SNMP_TAG=$2
 fi
 
-SNMP_IMAGE=wallinux/snmp:$SNMP_TAG
+SNMP_IMAGE=wallinux/snmp_${DISTRO_NAME}:${SNMP_TAG}
+SNMP_CONTAINER_0=snmp_${DISTRO_NAME}_0_${SNMP_TAG}
+SNMP_CONTAINER_1=snmp_${DISTRO_NAME}_1_${SNMP_TAG}
 
 function create_container ()
 {
@@ -26,7 +32,7 @@ function create_container ()
     docker exec $container \
 	   sh -c "if [ ! -e /root/.ssh/id_rsa ]; then ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ''; fi"
     docker exec $container \
-	   sh -c "rm -rf snmp-test; git clone https://github.com/wallinux/snmp_test.git"
+	   sh -c "git clone https://github.com/wallinux/snmp_test.git"
     docker exec -it $container sh -c "/etc/init.d/ssh start"
 }
 
@@ -41,18 +47,18 @@ function start ()
     docker network create --ipv6 --driver=bridge snmp_network_1 --subnet=172.19.0.0/24 --subnet=2001:db8:2::/64
     docker network create --ipv6 --driver=bridge snmp_network_2 --subnet=172.19.1.0/24 --subnet=2001:db8:3::/64
 
-    create_container snmp_0_$SNMP_TAG
-    create_container snmp_1_$SNMP_TAG
+    create_container $SNMP_CONTAINER_0
+    create_container $SNMP_CONTAINER_1
 }
 
 function stop ()
 {
-    echo "stop snmp_0_$SNMP_TAG and snmp_1_$SNMP_TAG"
-    docker stop snmp_0_$SNMP_TAG
-    docker stop snmp_1_$SNMP_TAG
+    echo "stop $SNMP_CONTAINER_0 and $SNMP_CONTAINER_1"
+    docker stop $SNMP_CONTAINER_0
+    docker stop $SNMP_CONTAINER_1
 
-    docker rm snmp_0_$SNMP_TAG
-    docker rm snmp_1_$SNMP_TAG
+    docker rm $SNMP_CONTAINER_0
+    docker rm $SNMP_CONTAINER_1
 
     echo "removing snmp_network_1 and snmp_network_2"
     docker network rm snmp_network_1
@@ -61,32 +67,32 @@ function stop ()
 
 function shell ()
 {
-    docker exec -it snmp_0_$SNMP_TAG sh -c "/bin/bash"
+    docker exec -it $SNMP_CONTAINER_0 sh -c "/bin/bash"
 }
 
 function terminal ()
 {
-    gnome-terminal --command "docker exec -it snmp_0_$SNMP_TAG sh -c \"/bin/bash\"" &
+    gnome-terminal --command "docker exec -it $SNMP_CONTAINER_0 sh -c \"/bin/bash\"" &
 }
 
 function test1 ()
 {
-    docker exec -it snmp_0_$SNMP_TAG bash -c "cd snmp_test; source ./docker_config; ./snmp_test -h; ./snmp_test -C"
+    docker exec -it $SNMP_CONTAINER_0 bash -c "cd snmp_test; source ./docker_config; ./snmp_test -h; ./snmp_test -C"
 }
 
 function test2 ()
 {
-    docker exec -it snmp_0_$SNMP_TAG bash -c "cd snmp_test; source ./docker_config; ./snmp_test_trap -h; ./snmp_test_trap -C remote"
+    docker exec -it $SNMP_CONTAINER_0 bash -c "cd snmp_test; source ./docker_config; ./snmp_test_trap -h; ./snmp_test_trap -C remote"
 }
 
 function help ()
 {
     echo "$0 <start|stop|shell|terminal|test> [tag]"
     echo " pull:     pull image from $SNMP_IMAGE"
-    echo " start:    start containers (snmp_0_$SNMP_TAG & snmp_1_$SNMP_TAG)"
-    echo " stop:     stop  containers (snmp_0_$SNMP_TAG & snmp_1_$SNMP_TAG)"
-    echo " shell:    connect to container (snmp_0_$SNMP_TAG)"
-    echo " terminal: start gnome-terminal and connect to container (snmp_0_$SNMP_TAG)"
+    echo " start:    start containers ($SNMP_CONTAINER_0 & $SNMP_CONTAINER_1)"
+    echo " stop:     stop  containers ($SNMP_CONTAINER_0 & $SNMP_CONTAINER_1)"
+    echo " shell:    connect to container ($SNMP_CONTAINER_0)"
+    echo " terminal: start gnome-terminal and connect to container ($SNMP_CONTAINER_0)"
     echo " test1:    run a simple snmp test in container"
     echo " test2:    run a simple snmp trap test in container"
     echo " help:     print this text"
