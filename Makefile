@@ -2,7 +2,7 @@ default: help
 
 include common.mk
 
-DNS		?= 128.224.200.11
+DNS		?= $(shell nslookup google.com | grep Server | cut -f3)
 DOCKER_ID_USER	?= wallinux
 
 ################################################################
