@@ -4,8 +4,8 @@
 ## jenkins after 2.116 is not working with a cpuset bigger then 64
 
 
-JENKINS_REMOTE_TAG ?= 2.121.3
-#JENKINS_REMOTE_TAG ?= lts
+#JENKINS_REMOTE_TAG ?= 2.121.3
+JENKINS_REMOTE_TAG ?= lts
 JENKINS_REMOTE_IMAGE = jenkins/jenkins:$(JENKINS_REMOTE_TAG)
 JENKINS_IMAGE 	  = jenkins
 JENKINS_CONTAINER = rcs_eprime_jenkins
