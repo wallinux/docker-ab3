@@ -1,0 +1,14 @@
+FROM lttng
+MAINTAINER Anders Wallin
+
+RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y libnuma-dev
+
+# Building lttng repos
+RUN (cd lttng-test; make stable-2.11.checkout)
+RUN (cd lttng-test; make install.userspace-rcu)
+RUN (cd lttng-test; make install.lttng-ust)
+RUN (cd lttng-test; make install.lttng-tools)
+RUN (cd lttng-test; make install babeltrace)
+
+RUN mkdir -p /root/.ssh
+ADD lttng/ssh.config /root/.ssh/config
