@@ -11,8 +11,8 @@ else
 fi
 
 SNMP_IMAGE=wallinux/snmp_${DISTRO_NAME}:${SNMP_TAG}
-SNMP_CONTAINER_0=snmp_${DISTRO_NAME}_0_${SNMP_TAG}
-SNMP_CONTAINER_1=snmp_${DISTRO_NAME}_1_${SNMP_TAG}
+SNMP_CONTAINER_0= ${SNMP_TAG}.snmp_0_${DISTRO_NAME}
+SNMP_CONTAINER_1= ${SNMP_TAG}.snmp_1_${DISTRO_NAME}
 
 function create_container ()
 {
