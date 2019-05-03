@@ -43,7 +43,7 @@ jenkins.prepare:
 
 jenkins.dockerhost:
 	$(TRACE)
-	$(ECHO) $$(hostname -a) > $(JENKINS_HOME)/dockerhost
+	$(ECHO) $$(hostname) > $(JENKINS_HOME)/dockerhost
 
 jenkins.create: # Create jenkins container
 	$(TRACE)
