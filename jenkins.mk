@@ -41,6 +41,10 @@ jenkins.prepare:
 	$(DOCKER) stop $(JENKINS_CONTAINER)
 	$(DOCKER) commit $(JENKINS_CONTAINER) $(JENKINS_IMAGE):$(JENKINS_TAG)
 
+jenkins.dockerhost:
+	$(TRACE)
+	$(ECHO) $$(hostname -a) > $(JENKINS_HOME)/dockerhost
+
 jenkins.create: # Create jenkins container
 	$(TRACE)
 	$(eval docker_bin=$(shell which docker))
@@ -54,7 +58,6 @@ jenkins.create: # Create jenkins container
 		--dns-search=wrs.com \
 		-p $(JENKINS_PORT):$(JENKINS_PORT) \
 		-e "JENKINS_OPTS=$(JENKINS_OPTS)" \
-		--cpuset-cpus=0-63 \
 		-it $(JENKINS_REMOTE_IMAGE)
 	$(MAKE) jenkins.prepare
 	$(MKSTAMP)
