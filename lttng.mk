@@ -1,5 +1,5 @@
 # lttng.mk
-LTTNG_TAGS		?= rcs 2.8 2.9 2.10 2.11
+LTTNG_TAGS		?= rcs stable-2.10 stable-2.11
 LTTNG_TAG		?= rcs
 LTTNG_IMAGE		= lttng:$(LTTNG_TAG)
 LTTNG_CONTAINER		= lttng_$(LTTNG_TAG)
@@ -18,7 +18,7 @@ lttng.build: # Build lttng image
 
 lttng.build.% : lttng.build # Build lttng.$(LTTNG_TAG) image
 	$(TRACE)
-	$(DOCKER) build -f lttng/Dockerfile-$* -t "lttng:$*" .
+	$(DOCKER) build -f lttng/Dockerfile-lttng --build-arg LTTNG_TAG=$* -t "lttng:$*" .
 	$(MKSTAMP)
 
 lttng.prepare:
@@ -29,7 +29,7 @@ lttng.prepare:
 		sh -c "echo $(host_timezone) >/etc/timezone && ln -sf /usr/share/zoneinfo/$(host_timezone) /etc/localtime && dpkg-reconfigure -f noninteractive tzdata"
 	$(DOCKER) exec $(LTTNG_CONTAINER) \
 		sh -c "if [ ! -e /root/.ssh/id_rsa ]; then ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ''; fi"
-	$(DOCKER) stop $(LTTNG_CONTAINER)
+	$(DOCKER) stop -t 2 $(LTTNG_CONTAINER)
 
 lttng.create.%: lttng.build.$(LTTNG_TAG) # Create a lttng container
 	$(TRACE)
@@ -37,20 +37,24 @@ lttng.create.%: lttng.build.$(LTTNG_TAG) # Create a lttng container
 		-h $(LTTNG_HOSTNAME) \
 		--dns=$(DNS) \
 		$(LTTNG_PORTS) \
+		--privileged \
 		-i $(LTTNG_IMAGE)
 	$(MAKE) lttng.prepare
 	$(MKSTAMP)
 
-lttng.CREATE: # Create ALL lttng container
-	$(foreach tag,$(LTTNG_TAGS), make -s lttng.create.$(tag) LTTNG_TAG=$(tag); )
+lttng.create: lttng.create.$(LTTNG_TAG) # Create lttng container
+	$(TRACE)
 
-lttng.start: lttng.create.$(LTTNG_TAG) # Start lttng container
+lttng.CREATE: # Create ALL lttng container
+	$(foreach tag,$(LTTNG_TAGS), make -s lttng.create LTTNG_TAG=$(tag); )
+
+lttng.start: lttng.create # Start lttng container
 	$(TRACE)
 	$(DOCKER) start $(LTTNG_CONTAINER)
 
 lttng.stop: # Stop lttng container
 	$(TRACE)
-	$(DOCKER) stop $(LTTNG_CONTAINER) || true
+	$(DOCKER) stop -t 2 $(LTTNG_CONTAINER) || true
 
 lttng.rm: lttng.stop # Remove lttng container
 	$(TRACE)
@@ -66,11 +70,11 @@ lttng.rmi: # Remove lttng image
 	$(call rmstamp,lttng.build.$(LTTNG_TAG))
 
 lttng.RMI: # Remove ALL lttng images
-	$(foreach tag, $(LTTNG_TAGS), make -s lttng.rmi LTTNG_TAG=$(tag); )
+	-$(foreach tag, $(LTTNG_TAGS), make -s lttng.rmi LTTNG_TAG=$(tag); )
 	$(DOCKER) rmi lttng
 	$(call rmstamp,lttng.build)
 
-lttng.shell: # Start a shell in lttng container
+lttng.shell: lttng.start # Start a shell in lttng container
 	$(TRACE)
 	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "export HOSTIP=$(LTTNG_HOSTIP); /bin/bash"
 
@@ -78,15 +82,19 @@ lttng.terminal: lttng.start # Start a gnome-terminal in lttng container
 	$(TRACE)
 	$(Q)gnome-terminal --command "docker exec -it $(LTTNG_CONTAINER) sh -c \" export HOSTIP=$(LTTNG_HOSTIP); /bin/bash\"" &
 
-lttng.run: # run targettest in lttng container
+lttng.test: lttng.start # run tests in lttng container
+	$(TRACE)
+	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "make -C lttng-test test.lttng_tools"
+
+lttng.run: lttng.start # run targettest in lttng container
 	$(TRACE)
 	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "export HOSTIP=$(LTTNG_HOSTIP); /root/lttng-test/test/test-live/targettest amarillo1"
 
-lttng.update: # Update lttng in the container
+lttng.update: lttng.start # Update lttng in the container
 	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "cd lttng-test; git pull; make repo.pull"
 
-lttng.rebuild: # Rebuild lttng in the container
-	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "cd lttng-test; make install"
+lttng.rebuild: lttng.start # Rebuild lttng in the container
+	$(DOCKER) exec -it $(LTTNG_CONTAINER) sh -c "make -C lttng-test install"
 
 lttng.tag:
 	$(DOCKER) tag $(LTTNG_IMAGE) $(REGISTRY_SERVER)/$(LTTNG_IMAGE)
