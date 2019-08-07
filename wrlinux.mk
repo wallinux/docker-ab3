@@ -13,12 +13,12 @@ WRLINUX_PKG_INSTALL	?= $(WIND_LX_HOME)/wrlinux-8/scripts/host_package_install.sh
 
 ################################################################
 
-$(TOP)/wrlinux/$(WRLINUX_IMAGE)-pkg_install.sh:
+wrlinux/$(WRLINUX_IMAGE)-pkg_install.sh:
 	$(TRACE)
-	$(Q)cp $(WRLINUX_PKG_INSTALL) $(TOP)/wrlinux/$(WRLINUX_IMAGE)-pkg_install.sh
-	$(Q)sed -i 's/sudo //' $(TOP)/wrlinux/$(WRLINUX_IMAGE)-pkg_install.sh
+	$(CP) $(WRLINUX_PKG_INSTALL) $@
+	$(Q)sed -i 's/sudo //' $@
 
-wrlinux.build.%: $(TOP)/wrlinux/$(WRLINUX_IMAGE)-pkg_install.sh: # Build wrlinux image
+wrlinux.build.%: wrlinux/$(WRLINUX_IMAGE)-pkg_install.sh # Build wrlinux image
 	$(TRACE)
 	$(DOCKER) build --pull --no-cache -f wrlinux/Dockerfile.$(WRLINUX_IMAGE) \
 		-t "$(WRLINUX_IMAGE):$*" \
