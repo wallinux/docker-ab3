@@ -17,7 +17,7 @@ wrlinux.build.%: # Build wrlinux image
 	$(TRACE)
 	$(Q)cp $(WRLINUX_PKG_INSTALL) $(TOP)/wrlinux/$(WRLINUX_IMAGE)-pkg_install.sh
 	$(Q)sed -i 's/sudo //' $(TOP)/wrlinux/$(WRLINUX_IMAGE)-pkg_install.sh
-	$(DOCKER) build --pull -f wrlinux/Dockerfile.$(WRLINUX_IMAGE) \
+	$(DOCKER) build --pull --no-cache -f wrlinux/Dockerfile.$(WRLINUX_IMAGE) \
 		-t "$(WRLINUX_IMAGE):$*" \
 		--build-arg IMAGENAME=$(WRLINUX_DISTRO):$(WRLINUX_DISTRO_TAG) .
 	$(MKSTAMP)
@@ -72,7 +72,5 @@ wrlinux.help:
 	$(call run-help, wrlinux.mk)
 
 help:: wrlinux.help
-	$(TRACE)
-	$(call run-help, wrlinux.mk)
 
 pull:: wrlinux.pull

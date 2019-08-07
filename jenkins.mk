@@ -14,7 +14,6 @@ JENKINS_PORT	  ?= 8091
 JENKINS_HOME	  ?= /var/jenkins_home
 JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -s http://127.0.0.1:$(JENKINS_PORT)/
 WR_INSTALLS	  = /wr/installs
-#		-v $(WR_INSTALLS):$(WR_INSTALLS) \
 
 JENKINS_OPTS	  = --httpPort=$(JENKINS_PORT)
 JENKINS_LOG	  = log.properties

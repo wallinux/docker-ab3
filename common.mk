@@ -24,7 +24,7 @@ endif
 define run-help
 	$(GREEN)
 	$(ECHO) -e "\n----- $@ -----"
-	$(Q)grep ":" $(1) | grep -v -e grep | grep -e "\#" | sed 's/:/#/' | cut -d'#' -f1,3 | sort | column -s'#' -t 
+	$(Q)grep ":" $(1) | grep -v -e grep | grep -v "\#\#" | grep -e "\#" | sed 's/:/#/' | cut -d'#' -f1,3 | sort | column -s'#' -t
 	$(NORMAL)
 endef
 

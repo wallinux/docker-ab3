@@ -5,7 +5,7 @@ LTTNG_IMAGE		= lttng:$(LTTNG_TAG)
 LTTNG_CONTAINER		= lttng_$(LTTNG_TAG)
 LTTNG_HOSTIP		= $(shell /sbin/ifconfig | grep 128.224 | cut -d: -f 2 | cut -d' ' -f 1)
 LTTNG_HOSTNAME          ?= lttng-$(subst .,_,$(LTTNG_TAG)).eprime.com
-#LTTNG_PORTS		?= -p 5342:5342 -p 5343:5343 -p 5344:5344
+##LTTNG_PORTS		?= -p 5342:5342 -p 5343:5343 -p 5344:5344
 ################################################################
 
 lttng.ALL: lttng.CREATE

@@ -7,7 +7,7 @@ DOCKER_ID_USER	?= wallinux
 
 ################################################################
 
-include registry.mk
+#include registry.mk
 include network.mk
 include lttng.mk
 include snmp.mk
