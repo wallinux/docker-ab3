@@ -11,7 +11,7 @@ network.create: # Create docker networks
 	$(MKSTAMP)
 
 network.rm: # Remove docker networks
-	$(Q)$(foreach network, $(DOCKER_NETWORKS), docker network rm $(network); )
+	$(Q)$(foreach network, $(DOCKER_NETWORKS), docker network rm $(network) || true; )
 	$(call rmstamp,network.create)
 
 network.connect.%: # Connect network to container=%

@@ -14,7 +14,7 @@ SNMP_IMAGE=wallinux/snmp_${DISTRO_NAME}:${SNMP_TAG}
 SNMP_CONTAINER_0= ${SNMP_TAG}.snmp_0_${DISTRO_NAME}
 SNMP_CONTAINER_1= ${SNMP_TAG}.snmp_1_${DISTRO_NAME}
 
-function create_container ()
+create_container ()
 {
     container=$1
     echo "create and start $container"
@@ -36,12 +36,12 @@ function create_container ()
     docker exec -it $container sh -c "/etc/init.d/ssh start"
 }
 
-function pull ()
+pull ()
 {
     docker pull $SNMP_IMAGE
 }
 
-function start ()
+start ()
 {
     echo "create snmp_network_1 and snmp_network_2"
     docker network create --ipv6 --driver=bridge snmp_network_1 --subnet=172.19.0.0/24 --subnet=2001:db8:2::/64
@@ -51,7 +51,7 @@ function start ()
     create_container $SNMP_CONTAINER_1
 }
 
-function stop ()
+stop ()
 {
     echo "stop $SNMP_CONTAINER_0 and $SNMP_CONTAINER_1"
     docker stop $SNMP_CONTAINER_0
@@ -65,27 +65,27 @@ function stop ()
     docker network rm snmp_network_2
 }
 
-function shell ()
+shell ()
 {
     docker exec -it $SNMP_CONTAINER_0 sh -c "/bin/bash"
 }
 
-function terminal ()
+terminal ()
 {
     gnome-terminal --command "docker exec -it $SNMP_CONTAINER_0 sh -c \"/bin/bash\"" &
 }
 
-function test1 ()
+test1 ()
 {
     docker exec -it $SNMP_CONTAINER_0 bash -c "cd snmp_test; source ./docker_config; ./snmp_test -h; ./snmp_test -C"
 }
 
-function test2 ()
+test2 ()
 {
     docker exec -it $SNMP_CONTAINER_0 bash -c "cd snmp_test; source ./docker_config; ./snmp_test_trap -h; ./snmp_test_trap -C remote"
 }
 
-function help ()
+help ()
 {
     echo "$0 <start|stop|shell|terminal|test> [tag]"
     echo " pull:     pull image from $SNMP_IMAGE"

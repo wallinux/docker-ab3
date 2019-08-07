@@ -18,6 +18,7 @@ TOP	:= $(shell pwd)
 ifneq ($(V),1)
 export Q=@
 endif
+export V
 
 .PHONY: *.help
 

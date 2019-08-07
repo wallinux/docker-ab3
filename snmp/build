@@ -13,6 +13,6 @@ autoreconf
 		--enable-ipv6 \
 		--with-cflags="-g -O2" \
 		--without-elf
-make
-make docs
-make install
+make -j
+make -j docs
+make -j install

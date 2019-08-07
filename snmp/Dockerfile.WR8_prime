@@ -1,0 +1,4 @@
+FROM snmp_ubuntu_18.10:latest
+MAINTAINER Anders Wallin
+RUN (cd net-snmp; git fetch --all; git checkout -b WR8_prime wayline/WR8_prime)
+RUN [ "/bin/bash", "-c", "/root/build &> /root/build.out" ]
