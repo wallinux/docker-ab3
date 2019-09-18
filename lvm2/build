@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+
+if [ "$#" = 1 ]; then
+    TAG=$1
+else
+    TAG=v2_02_171
+fi
+git tag | grep $TAG >/dev/null
+if [ $? -ne 0 ]; then
+    echo tag: $TAG missing
+    exit
+fi
+
+BRANCH=$(echo $TAG | sed 's/v/b/')
+
+cd /root/lvm2
+git checkout $BRANCH 2> /dev/null || git checkout -b $BRANCH $TAG;
+./configure --enable-lvmetad
+make
+make install
+
+lvm version

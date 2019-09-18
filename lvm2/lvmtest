@@ -1,9 +1,13 @@
 #!/bin/bash
 
-TMPDIR=/tmp
+[ "$TMPDIR" = "" ] && TMPDIR=/tmp
+mkdir -p $TMPDIR
+
 IMG0=$TMPDIR/img0
 VG=prime
 LV0=lv0
+LVSIZE=90M
+[ "$USE_LVMETAD" = "" ] && USE_LVMETAD=0
 
 trace ()
 {
@@ -18,24 +22,43 @@ prepare_axxiaarm64 ()
 	echo "dm is not added to the default kernel, need to be added"
 	exit -1
     fi
-    
+
     echo "tmp fix for labnet issue"
     ip -4 route add via 128.224.95.179 128.224.95.52 dev eth0
 
     # which partx
     # if [ $? -ne 0 ]; then
-    # 	echo install partx
-    # 	which dnf
-    # 	if [ $? -eq 0 ]; then
-    # 	    # wrl18
-    # 	    dnf install -y lib32-util-linux-partx > /dev/null
-    # 	else
-    # 	    # wrl8
-    # 	    smart channel -y --add /etc/smart/channels/axxiaarm64-ml-releasehost.channel
-    # 	    smart update
-    # 	    smart install -y util-linux-partx > /dev/null
-    # 	fi
+    #	echo install partx
+    #	which dnf
+    #	if [ $? -eq 0 ]; then
+    #	    # wrl18
+    #	    dnf install -y lib32-util-linux-partx > /dev/null
+    #	else
+    #	    # wrl8
+    #	    smart channel -y --add /etc/smart/channels/axxiaarm64-ml-releasehost.channel
+    #	    smart update
+    #	    smart install -y util-linux-partx > /dev/null
+    #	fi
     # fi
+}
+
+prepare_lvmetad ()
+{
+    rm -f $TMPDIR/pvscan*
+    if [ $USE_LVMETAD = 1 ]; then
+	sed -i 's/use_lvmetad = 0/use_lvmetad = 1/' /etc/lvm/lvm.conf
+	pgrep lvmetad && killall lvmetad
+	lvmetad
+	pvscan -vv &> $TMPDIR/pvscan.out
+	pvscan -vv --cache &> $TMPDIR/pvscan_cache.out
+    else
+	local cache_dir=$(grep "cache_dir =" /etc/lvm/lvm.conf | cut -d' '  -f3 | sed 's/"//g')
+	sed -i 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf
+	pgrep lvmetad && killall lvmetad
+	rm -f $cache_dir/.cache
+	pvscan -vv &> $TMPDIR/pvscan.out
+	ls -al $cache_dir/.cache
+    fi
 }
 
 create_physical_volume ()
@@ -49,6 +72,9 @@ create_physical_volume ()
     losetup $LODEV $image
     echo ",,8e,," | sfdisk $LODEV
     #partx --update $LODEV
+    set -x
+    partprobe -u $LODEV
+    set +x
     pvcreate -f $LODEV
     vgcreate $volume_group $LODEV
 }
@@ -66,13 +92,14 @@ populate_fs ()
 {
     local device=$1
     local mntdir=$TMPDIR/testmnt
-    
-    echo "fill device with data" 
+
+    echo "- fill device with data"
     mkdir -p $mntdir
     mount $device $mntdir
     [ ! -d $mntdir/bin ] && cp -a /usr/bin $mntdir/
     sync $mntdir
-    du -sh $mntdir
+    #du -sh $mntdir
+    #df -h /dev/mapper/$VG-$LV0
     umount $mntdir
 }
 
@@ -81,9 +108,9 @@ create_fs ()
 {
     local device=$1
     local mntdir=$TMPDIR/testmnt
-    
-    mkfs.ext4 $device
-    populate_fs $device
+
+    mkfs.ext4 $device > /dev/null
+    #populate_fs $device
 }
 
 show()
@@ -110,9 +137,9 @@ prepare_lv ()
 {
     local vg=$1
     local lv=$2
-    
+
     trace create_physical_volume $IMG0 $vg 100
-    trace create_logical_volume $lv $vg 80M
+    trace create_logical_volume $lv $vg $LVSIZE
     trace create_fs /dev/$vg/$lv
 }
 
@@ -128,13 +155,13 @@ test_lv ()
     sync $mntdir
     du -sh $mntdir
     umount $mntdir
-}    
+}
 
 test1 ()
 {
-    for i in $(seq 1 $1); do 
-	lvremove -y $VG/$LV0
-	lvcreate -y --size 80M --name $LV0 $VG
+    for i in $(seq 1 $1); do
+	lvremove -y $VG/$LV0 > /dev/null
+	lvcreate -y --size $LVSIZE --name $LV0 $VG > /dev/null
     done
 }
 
@@ -142,34 +169,47 @@ HOSTNAME=$(hostname)
 [ $HOSTNAME = axxiaarm64-prime ] && prepare_axxiaarm64
 [ $HOSTNAME = axxiaarm64-ml ] && prepare_axxiaarm64
 
+lvm version
+prepare_lvmetad
 prepare_lv $VG $LV0
-pvscan --cache
 
 #test_lv /dev/$VG/$LV0
 
+echo "- time lvremove"
+time lvremove -y $VG/$LV0
+
+echo "- time lvcreate"
+time lvcreate -q -y --size $LVSIZE --name $LV0 $VG
+
 time test1 10
 
-time lvremove -y $VG/$LV0
-time lvcreate -q -y --size 80M --name $LV0 $VG
+if true; then
+   rm -f lv*.out
 
-rm -f lv*.out
+   echo "- strace"
+   #pvscan -vv &> $TMPDIR/pvscan.out2
+   strace -o $TMPDIR/lvremove.out -v lvremove -y $VG/$LV0  > /dev/null
+   #pvscan -vv &> $TMPDIR/pvscan.out3
+   strace -o $TMPDIR/lvcreate.out -v lvcreate -y --size $LVSIZE --name $LV0 $VG  > /dev/null
+   echo "- grep ttys"
+   grep "/dev/tty" $TMPDIR/lvremove.out | wc -l
+   grep "/dev/tty" $TMPDIR/lvcreate.out | wc -l
 
-echo "strace"
-strace -o $TMPDIR/lvremove.out -v lvremove -y $VG/$LV0
-strace -o $TMPDIR/lvrcreate.out -v lvcreate -y --size 80M --name $LV0 $VG
+   echo "- strace -c"
+   strace -c -o $TMPDIR/lvremove_c.out lvremove -y $VG/$LV0 > /dev/null
+   strace -c -o $TMPDIR/lvcreate_c.out lvcreate -y --size $LVSIZE --name $LV0 $VG  > /dev/null
+   echo "- no of syscalls"
+   grep total $TMPDIR/lvremove_c.out  $TMPDIR/lvcreate_c.out
 
-# timestamps for wrl8 is weird
-echo "strace -c"
-strace -c -o $TMPDIR/lvremove_c.out lvremove -y $VG/$LV0
-strace -c -o $TMPDIR/lvrcreate_c.out lvcreate -y --size 80M --name $LV0 $VG
+   #echo "- strace -T -r -t"
+   strace -T -r -t -o $TMPDIR/lvremove_Tr.out lvremove -vvvv -y $VG/$LV0 &> /dev/null
+   strace -T -r -t -o $TMPDIR/lvcreate_Tr.out lvcreate -vvvv -y --size $LVSIZE --name $LV0 $VG &> /dev/null
+fi
 
-# timestamps take longer time for wrl18?!
-echo "strace -T -r -t"
-time strace -T -r -t -o $TMPDIR/lvremove_Tr.out lvremove -y $VG/$LV0
-time strace -T -r -t -o $TMPDIR/lvrcreate_Tr.out lvcreate -y --size 80M --name $LV0 $VG
+if true; then
+   echo "- debug printout"
+   lvremove -vvvv -y $VG/$LV0 &> $TMPDIR/lvremove.debug
+   lvcreate -vvvv -y --size $LVSIZE --name $LV0 $VG  &> $TMPDIR/lvcreate.debug
+fi
 
-# debug printout
-lvremove -v -y $VG/$LV0
-lvcreate -v -y --size 80M --name $LV0 $VG
-
-cleanup_lv $VG $LV0 $LODEV 
+cleanup_lv $VG $LV0 $LODEV > /dev/null
