@@ -175,6 +175,7 @@ time lvremove -y $VG/$LV0
 echo "- time lvcreate"
 time lvcreate -q -y --size $LVSIZE --name $LV0 $VG
 
+echo "- time test1 100"
 (time -p test1 100) |& tee $TMPDIR/test1.time
 
 if true; then
