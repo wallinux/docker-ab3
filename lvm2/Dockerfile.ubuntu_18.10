@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y apt-utils
 RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y build-essential libaio-dev thin-provisioning-tools
-RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y git emacs tmux tig strace gdb tree psmisc parted
+RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y git emacs tmux tig strace gdb tree psmisc
 
 ADD lvm2/.gitconfig /root/.gitconfig
 ADD lvm2/.tmux.conf /root/.tmux.conf

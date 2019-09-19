@@ -11,10 +11,6 @@ LVM2_CONTAINER		= $(LVM2_IMAGE)_$(LVM2_TAG)
 
 lvm2.build: # Build lvm2 image
 	$(TRACE)
-	#$(CP) $(HOME)/.gitconfig lvm2/
-	#$(Q)sed -i '/signingkey/d' lvm2/.gitconfig
-	#$(Q)sed -i '/gpg/d' lvm2/.gitconfig
-	#$(CP) $(HOME)/.tmux.conf lvm2/
 	$(DOCKER) build --pull -f lvm2/Dockerfile.$(LVM2_DISTRO)_$(LVM2_DISTRO_TAG) \
 		-t "$(LVM2_IMAGE):$(LVM2_TAG)"  .
 	$(MKSTAMP)
@@ -40,7 +36,11 @@ lvm2.shell: lvm2.start # Start a shell in lvm2 container
 
 lvm2.terminal: lvm2.start # Start a gnome-terminal for the lvm2 container
 	$(TRACE)
-	$(Q)gnome-terminal --command "docker exec -it $(LVM2_CONTAINER) sh -c \"/bin/bash\"" &
+	$(Q)unset GNOME_TERMINAL_SCREEN; gnome-terminal -- docker exec -it $(LVM2_CONTAINER) sh -c "/bin/bash" &
+
+lvm2.test: lvm2.start # Run lvm tests
+	$(TRACE)
+	$(DOCKER) exec -it $(LVM2_CONTAINER) bash -c "/root/host/lvm2/lvmtest.all"
 
 lvm2.stop: # Stop lvm2 container
 	$(TRACE)

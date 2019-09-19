@@ -1,13 +1,18 @@
 #!/bin/bash
 
 [ "$TMPDIR" = "" ] && TMPDIR=/tmp
+[ "$USE_LVMETAD" = "" ] && USE_LVMETAD=0
+
+
+LVM_VERSION=$(lvm version | head -1 | sed 's/ *//g' | cut -d':' -f2 | cut -d'(' -f1)
+TMPDIR=$TMPDIR-$USE_LVMETAD-$LVM_VERSION
+echo $TMPDIR
 mkdir -p $TMPDIR
 
 IMG0=$TMPDIR/img0
 VG=prime
 LV0=lv0
 LVSIZE=90M
-[ "$USE_LVMETAD" = "" ] && USE_LVMETAD=0
 
 trace ()
 {
@@ -46,18 +51,15 @@ prepare_lvmetad ()
 {
     rm -f $TMPDIR/pvscan*
     if [ $USE_LVMETAD = 1 ]; then
+	mkdir -p /run/lvm
 	sed -i 's/use_lvmetad = 0/use_lvmetad = 1/' /etc/lvm/lvm.conf
 	pgrep lvmetad && killall lvmetad
 	lvmetad
-	pvscan -vv &> $TMPDIR/pvscan.out
-	pvscan -vv --cache &> $TMPDIR/pvscan_cache.out
     else
 	local cache_dir=$(grep "cache_dir =" /etc/lvm/lvm.conf | cut -d' '  -f3 | sed 's/"//g')
 	sed -i 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf
 	pgrep lvmetad && killall lvmetad
 	rm -f $cache_dir/.cache
-	pvscan -vv &> $TMPDIR/pvscan.out
-	ls -al $cache_dir/.cache
     fi
 }
 
@@ -72,20 +74,12 @@ create_physical_volume ()
     losetup $LODEV $image
     echo ",,8e,," | sfdisk $LODEV
     #partx --update $LODEV
-    set -x
-    partprobe -u $LODEV
-    set +x
     pvcreate -f $LODEV
+    pvscan -vv &> $TMPDIR/pvscan.out
+    pvscan -vv --cache &> $TMPDIR/pvscan_cache.out
     vgcreate $volume_group $LODEV
-}
-
-create_logical_volume ()
-{
-    local volume_name=$1
-    local volume_group=$2
-    local size=$3
-
-    lvcreate -y --size $size --name $volume_name $volume_group
+    vgscan -vv --cache &> $TMPDIR/vgscan_cache.out
+    lvscan -vv --cache &> $TMPDIR/lvscan_cache.out
 }
 
 populate_fs ()
@@ -139,7 +133,7 @@ prepare_lv ()
     local lv=$2
 
     trace create_physical_volume $IMG0 $vg 100
-    trace create_logical_volume $lv $vg $LVSIZE
+    lvcreate -y --size $LVSIZE --name $lv $vg
     trace create_fs /dev/$vg/$lv
 }
 
@@ -181,7 +175,7 @@ time lvremove -y $VG/$LV0
 echo "- time lvcreate"
 time lvcreate -q -y --size $LVSIZE --name $LV0 $VG
 
-time test1 10
+(time -p test1 100) |& tee $TMPDIR/test1.time
 
 if true; then
    rm -f lv*.out
@@ -208,8 +202,14 @@ fi
 
 if true; then
    echo "- debug printout"
-   lvremove -vvvv -y $VG/$LV0 &> $TMPDIR/lvremove.debug
-   lvcreate -vvvv -y --size $LVSIZE --name $LV0 $VG  &> $TMPDIR/lvcreate.debug
+   lvremove -v -y $VG/$LV0 &> $TMPDIR/lvremove.debug.1
+   lvcreate -v -y --size $LVSIZE --name $LV0 $VG  &> $TMPDIR/lvcreate.debug.1
+   lvremove -vv -y $VG/$LV0 &> $TMPDIR/lvremove.debug.2
+   lvcreate -vv -y --size $LVSIZE --name $LV0 $VG  &> $TMPDIR/lvcreate.debug.2
+   lvremove -vvv -y $VG/$LV0 &> $TMPDIR/lvremove.debug.3
+   lvcreate -vvv -y --size $LVSIZE --name $LV0 $VG  &> $TMPDIR/lvcreate.debug.3
+   lvremove -vvvv -y $VG/$LV0 &> $TMPDIR/lvremove.debug.4
+   lvcreate -vvvv -y --size $LVSIZE --name $LV0 $VG  &> $TMPDIR/lvcreate.debug.4
 fi
 
 cleanup_lv $VG $LV0 $LODEV > /dev/null
