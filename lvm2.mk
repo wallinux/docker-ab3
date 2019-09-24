@@ -20,6 +20,7 @@ lvm2.create: lvm2.build # Create a lvm2 container
 	$(DOCKER) create -P --name=$(LVM2_CONTAINER) \
 		-h lvm2.eprime.com \
 		-v $(TOP):/root/host \
+		-v /dev:/dev \
 		--dns=$(DNS) \
 		--privileged=true \
 		-i \

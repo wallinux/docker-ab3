@@ -1,0 +1,22 @@
+#!/bin/bash
+
+VG=prime
+
+if lvdisplay $VG &> /dev/null; then
+    lvremove -v -y $VG
+fi
+
+if vgdisplay $VG &>/dev/null; then
+    vgremove -y $VG
+fi
+
+while [ $(pvs --noheadings | wc -l) != 0 ]; do
+    lodev=$(pvs --noheadings | cut -d' ' -f3)
+    pvremove -y $lodev
+    losetup -d $lodev
+done
+
+lvs
+vgs
+pvs --noheadings
+losetup | grep img

@@ -3,15 +3,14 @@
 [ "$TMPDIR" = "" ] && TMPDIR=/tmp
 [ "$USE_LVMETAD" = "" ] && USE_LVMETAD=0
 
-
 LVM_VERSION=$(lvm version | head -1 | sed 's/ *//g' | cut -d':' -f2 | cut -d'(' -f1)
 TMPDIR=$TMPDIR-$USE_LVMETAD-$LVM_VERSION
 echo $TMPDIR
 mkdir -p $TMPDIR
 
-IMG0=$TMPDIR/img0
+IMG=$TMPDIR/img0
 VG=prime
-LV0=lv0
+LV=lv0
 LVSIZE=90M
 
 trace ()
@@ -31,20 +30,6 @@ prepare_axxiaarm64 ()
     echo "tmp fix for labnet issue"
     ip -4 route add via 128.224.95.179 128.224.95.52 dev eth0
 
-    # which partx
-    # if [ $? -ne 0 ]; then
-    #	echo install partx
-    #	which dnf
-    #	if [ $? -eq 0 ]; then
-    #	    # wrl18
-    #	    dnf install -y lib32-util-linux-partx > /dev/null
-    #	else
-    #	    # wrl8
-    #	    smart channel -y --add /etc/smart/channels/axxiaarm64-ml-releasehost.channel
-    #	    smart update
-    #	    smart install -y util-linux-partx > /dev/null
-    #	fi
-    # fi
 }
 
 prepare_lvmetad ()
@@ -73,46 +58,12 @@ create_physical_volume ()
     LODEV=$(losetup -f)
     losetup $LODEV $image
     echo ",,8e,," | sfdisk $LODEV
-    #partx --update $LODEV
     pvcreate -f $LODEV
-    pvscan -vv &> $TMPDIR/pvscan.out
+#    pvscan -vv &> $TMPDIR/pvscan.out
     pvscan -vv --cache &> $TMPDIR/pvscan_cache.out
     vgcreate $volume_group $LODEV
-    vgscan -vv --cache &> $TMPDIR/vgscan_cache.out
-    lvscan -vv --cache &> $TMPDIR/lvscan_cache.out
-}
-
-populate_fs ()
-{
-    local device=$1
-    local mntdir=$TMPDIR/testmnt
-
-    echo "- fill device with data"
-    mkdir -p $mntdir
-    mount $device $mntdir
-    [ ! -d $mntdir/bin ] && cp -a /usr/bin $mntdir/
-    sync $mntdir
-    #du -sh $mntdir
-    #df -h /dev/mapper/$VG-$LV0
-    umount $mntdir
-}
-
-
-create_fs ()
-{
-    local device=$1
-    local mntdir=$TMPDIR/testmnt
-
-    mkfs.ext4 $device > /dev/null
-    #populate_fs $device
-}
-
-show()
-{
-    pvdisplay
-    vgdisplay
-    lvdisplay
-    lsblk
+#    vgscan -vv --cache &> $TMPDIR/vgscan_cache.out
+#    lvscan -vv --cache &> $TMPDIR/lvscan_cache.out
 }
 
 cleanup_lv ()
@@ -132,9 +83,9 @@ prepare_lv ()
     local vg=$1
     local lv=$2
 
-    trace create_physical_volume $IMG0 $vg 100
+    trace create_physical_volume $IMG $vg 100
     lvcreate -y --size $LVSIZE --name $lv $vg
-    trace create_fs /dev/$vg/$lv
+    trace mkfs.ext4 /dev/$vg/$lv > /dev/null
 }
 
 test_lv ()
@@ -154,8 +105,8 @@ test_lv ()
 test1 ()
 {
     for i in $(seq 1 $1); do
-	lvremove -y $VG/$LV0 > /dev/null
-	lvcreate -y --size $LVSIZE --name $LV0 $VG > /dev/null
+	lvremove -y $VG/$LV > /dev/null
+	lvcreate -y --size $LVSIZE --name $LV $VG > /dev/null
     done
 }
 
@@ -165,15 +116,15 @@ HOSTNAME=$(hostname)
 
 lvm version
 prepare_lvmetad
-prepare_lv $VG $LV0
+prepare_lv $VG $LV
 
-#test_lv /dev/$VG/$LV0
+#test_lv /dev/$VG/$LV
 
 echo "- time lvremove"
-time lvremove -y $VG/$LV0
+time lvremove -y $VG/$LV
 
 echo "- time lvcreate"
-time lvcreate -q -y --size $LVSIZE --name $LV0 $VG
+time lvcreate -q -y --size $LVSIZE --name $LV $VG
 
 echo "- time test1 100"
 (time -p test1 100) |& tee $TMPDIR/test1.time
@@ -183,34 +134,34 @@ if true; then
 
    echo "- strace"
    #pvscan -vv &> $TMPDIR/pvscan.out2
-   strace -o $TMPDIR/lvremove.out -v lvremove -y $VG/$LV0  > /dev/null
+   strace -o $TMPDIR/lvremove.out -v lvremove -y $VG/$LV  > /dev/null
    #pvscan -vv &> $TMPDIR/pvscan.out3
-   strace -o $TMPDIR/lvcreate.out -v lvcreate -y --size $LVSIZE --name $LV0 $VG  > /dev/null
+   strace -o $TMPDIR/lvcreate.out -v lvcreate -y --size $LVSIZE --name $LV $VG  > /dev/null
    echo "- grep ttys"
    grep "/dev/tty" $TMPDIR/lvremove.out | wc -l
    grep "/dev/tty" $TMPDIR/lvcreate.out | wc -l
 
    echo "- strace -c"
-   strace -c -o $TMPDIR/lvremove_c.out lvremove -y $VG/$LV0 > /dev/null
-   strace -c -o $TMPDIR/lvcreate_c.out lvcreate -y --size $LVSIZE --name $LV0 $VG  > /dev/null
+   strace -c -o $TMPDIR/lvremove_c.out lvremove -y $VG/$LV > /dev/null
+   strace -c -o $TMPDIR/lvcreate_c.out lvcreate -y --size $LVSIZE --name $LV $VG  > /dev/null
    echo "- no of syscalls"
    grep total $TMPDIR/lvremove_c.out  $TMPDIR/lvcreate_c.out
 
    #echo "- strace -T -r -t"
-   strace -T -r -t -o $TMPDIR/lvremove_Tr.out lvremove -vvvv -y $VG/$LV0 &> /dev/null
-   strace -T -r -t -o $TMPDIR/lvcreate_Tr.out lvcreate -vvvv -y --size $LVSIZE --name $LV0 $VG &> /dev/null
+   strace -T -r -t -o $TMPDIR/lvremove_Tr.out lvremove -vvvv -y $VG/$LV &> /dev/null
+   strace -T -r -t -o $TMPDIR/lvcreate_Tr.out lvcreate -vvvv -y --size $LVSIZE --name $LV $VG &> /dev/null
 fi
 
 if true; then
    echo "- debug printout"
-   lvremove -v -y $VG/$LV0 &> $TMPDIR/lvremove.debug.1
-   lvcreate -v -y --size $LVSIZE --name $LV0 $VG  &> $TMPDIR/lvcreate.debug.1
-   lvremove -vv -y $VG/$LV0 &> $TMPDIR/lvremove.debug.2
-   lvcreate -vv -y --size $LVSIZE --name $LV0 $VG  &> $TMPDIR/lvcreate.debug.2
-   lvremove -vvv -y $VG/$LV0 &> $TMPDIR/lvremove.debug.3
-   lvcreate -vvv -y --size $LVSIZE --name $LV0 $VG  &> $TMPDIR/lvcreate.debug.3
-   lvremove -vvvv -y $VG/$LV0 &> $TMPDIR/lvremove.debug.4
-   lvcreate -vvvv -y --size $LVSIZE --name $LV0 $VG  &> $TMPDIR/lvcreate.debug.4
+   lvremove -v -y $VG/$LV &> $TMPDIR/lvremove.debug.1
+   lvcreate -v -y --size $LVSIZE --name $LV $VG  &> $TMPDIR/lvcreate.debug.1
+   lvremove -vv -y $VG/$LV &> $TMPDIR/lvremove.debug.2
+   lvcreate -vv -y --size $LVSIZE --name $LV $VG  &> $TMPDIR/lvcreate.debug.2
+   lvremove -vvv -y $VG/$LV &> $TMPDIR/lvremove.debug.3
+   lvcreate -vvv -y --size $LVSIZE --name $LV $VG  &> $TMPDIR/lvcreate.debug.3
+   lvremove -vvvv -y $VG/$LV &> $TMPDIR/lvremove.debug.4
+   lvcreate -vvvv -y --size $LVSIZE --name $LV $VG  &> $TMPDIR/lvcreate.debug.4
 fi
 
-cleanup_lv $VG $LV0 $LODEV > /dev/null
+cleanup_lv $VG $LV $LODEV > /dev/null

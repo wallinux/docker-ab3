@@ -1,0 +1,153 @@
+#!/bin/bash
+set -e 
+[ "$TMPDIR" = "" ] && TMPDIR=/tmp
+[ "$USE_LVMETAD" = "" ] && USE_LVMETAD=0
+if [ $# -gt 0 ]; then
+    COUNT=$1
+else
+    [ "$COUNT" = "" ] && COUNT=1
+fi
+
+LVM_VERSION=$(lvm version | head -1 | sed 's/ *//g' | cut -d':' -f2 | cut -d'(' -f1)
+TMPDIR=$TMPDIR/lvm-$USE_LVMETAD-$LVM_VERSION
+echo "- $TMPDIR"
+mkdir -p $TMPDIR
+
+VG=prime
+declare -a IMG
+declare -a LV
+LVSIZE=5M
+
+declare -a LODEV
+
+trace ()
+{
+    echo "- $*"
+    $*
+}
+
+prepare_axxiaarm64 ()
+{
+    zcat /proc/config.gz | grep "CONFIG_BLK_DEV_DM=y" > /dev/null
+    if [ $? -ne 0 ]; then
+	echo "dm is not added to the default kernel, need to be added"
+	exit -1
+    fi
+
+    echo "tmp fix for labnet issue"
+    ip -4 route add via 128.224.95.179 128.224.95.52 dev eth0
+
+}
+
+prepare_lvmetad ()
+{
+    rm -f $TMPDIR/pvscan*
+    if [ $USE_LVMETAD = 1 ]; then
+	mkdir -p /run/lvm
+	sed -i 's/use_lvmetad = 0/use_lvmetad = 1/' /etc/lvm/lvm.conf
+	#pgrep lvmetad && killall lvmetad
+	#lvmetad
+    else
+	local cache_dir=$(grep "cache_dir =" /etc/lvm/lvm.conf | cut -d' '  -f3 | sed 's/"//g')
+	sed -i 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf
+	pgrep lvmetad && killall lvmetad
+	rm -f $cache_dir/.cache
+    fi
+}
+
+
+create_volume ()
+{
+    local index=$1
+    
+    local lv=${LV[$index]}
+    local image=${IMG[$index]}
+    local lodev=$(losetup -f)
+
+    LODEV[$index]=$lodev
+    
+    echo "- create $index"
+
+    [ ! -f $image ] &&dd if=/dev/zero of=$image bs=10 count=1M &> /dev/null
+    losetup $lodev $image
+    echo ",,8e,," | sfdisk $lodev &> /dev/null
+    pvcreate -f $lodev &> /dev/null
+    if vgdisplay $VG &> /dev/null; then
+	vgextend $VG $lodev &> /dev/null
+    else
+	vgcreate $VG $lodev &> /dev/null
+    fi
+    lvcreate -y --size $LVSIZE --name $lv $VG &> /dev/null
+    mkfs.ext4 /dev/$VG/$lv &> /dev/null
+}
+
+prepare_lvs ()
+{
+    local count=$1
+
+    for i in $(seq 1 $count); do
+	LV[$i]=lv$i
+	IMG[$i]=$TMPDIR/img$i
+	create_volume $i
+    done
+    
+    if [ $USE_LVMETAD = 0 ]; then
+	pvscan -vv &> $TMPDIR/pvscan.out
+    else
+	pvscan -vv --cache &> $TMPDIR/pvscan.out
+    fi
+}
+
+remove_volumes ()
+{
+    local count=$1
+
+    lvremove -y $VG
+    vgremove -y $VG
+    
+    for i in $(seq 1 $count); do
+	pvremove ${LODEV[$i]}
+	losetup -d ${LODEV[$i]}
+    done
+}
+
+test_lvremove ()
+{
+    local count=$1
+
+    for i in $(seq 1 $count); do
+	lvremove -y $VG/${LV[$i]} > /dev/null
+    done
+}
+
+test_lvcreate ()
+{
+    local count=$1
+
+    for i in $(seq 1 $count); do
+	lvcreate -y --size $LVSIZE --name ${LV[$i]} $VG > /dev/null
+    done
+}
+
+#######################################################################
+
+HOSTNAME=$(hostname)
+[ $HOSTNAME = axxiaarm64-prime ] && prepare_axxiaarm64
+[ $HOSTNAME = axxiaarm64-ml ] && prepare_axxiaarm64
+
+lvm version
+echo ""
+
+prepare_lvmetad
+
+prepare_lvs $COUNT
+
+#echo "- lvs"
+#lvs
+
+echo "- time test_lvremove $COUNT"
+(time -p test_lvremove $COUNT) |& tee $TMPDIR/test_remove.time
+
+echo "- time test_lvcreate $COUNT"
+(time -p test_lvcreate $COUNT) |& tee $TMPDIR/test_create.time
+remove_volumes $COUNT $VG $LV $LODEV > /dev/null

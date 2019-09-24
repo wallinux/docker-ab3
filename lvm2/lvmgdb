@@ -1,0 +1,101 @@
+#!/bin/bash
+
+[ "$TMPDIR" = "" ] && TMPDIR=/tmp
+[ "$USE_LVMETAD" = "" ] && USE_LVMETAD=0
+
+
+LVM_VERSION=$(lvm version | head -1 | sed 's/ *//g' | cut -d':' -f2 | cut -d'(' -f1)
+TMPDIR=$TMPDIR/lvm-$USE_LVMETAD-$LVM_VERSION
+echo $TMPDIR
+mkdir -p $TMPDIR
+
+IMG0=$TMPDIR/img0
+VG=prime
+LV0=lv0
+LVSIZE=90M
+
+trace ()
+{
+    echo "- $*"
+    $*
+}
+
+prepare_lvmetad ()
+{
+    rm -f $TMPDIR/pvscan*
+    if [ $USE_LVMETAD = 1 ]; then
+	mkdir -p /run/lvm
+	sed -i 's/use_lvmetad = 0/use_lvmetad = 1/' /etc/lvm/lvm.conf
+	pgrep lvmetad && killall lvmetad
+	lvmetad
+    else
+	local cache_dir=$(grep "cache_dir =" /etc/lvm/lvm.conf | cut -d' '  -f3 | sed 's/"//g')
+	sed -i 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf
+	pgrep lvmetad && killall lvmetad
+	rm -f $cache_dir/.cache
+    fi
+}
+
+create_physical_volume ()
+{
+    local image=$1
+    local volume_group=$2
+    local size=$3
+
+    [ ! -f $image ] && dd if=/dev/zero of=$image bs=$size count=1M
+    LODEV=$(losetup -f)
+    losetup $LODEV $image
+    echo ",,8e,," | sfdisk $LODEV
+    pvcreate -f $LODEV
+    pvscan -vv &> $TMPDIR/pvscan.out
+    pvscan -vv --cache &> $TMPDIR/pvscan_cache.out
+    vgcreate $volume_group $LODEV
+    vgscan -vv --cache &> $TMPDIR/vgscan_cache.out
+    lvscan -vv --cache &> $TMPDIR/lvscan_cache.out
+}
+
+prepare_lv ()
+{
+    local vg=$1
+    local lv=$2
+
+    create_physical_volume $IMG0 $vg 100
+    lvcreate -y --size $LVSIZE --name $lv $vg
+    mkfs.ext4 /dev/$vg/$lv > /dev/null
+}
+
+cleanup_lv ()
+{
+    local vg=$1
+    local lv=$2
+    local lodev=$3
+
+    lvremove -y $vg/$lv
+    vgremove -y $vg
+    pvremove $lodev
+    losetup -d $lodev
+}
+
+prepare_gdb ()
+{
+    ecclvmdho "b persistent_filter_load" > lvremote.cmd
+    echo "b persistent_filter_create" >> lvremote.cmd
+    echo "b label_scan" >> lvremote.cmd
+    echo "b dev_cache_scan" >> lvremote.cmd
+    echo "r lvremove -vvvv -y $VG/$LV0" >> lvremote.cmd
+2}
+
+2111lvm version
+
+LODEV=$(losetup | grep img0 | cut -d' ' -f1)
+[ "$LODEV" != "" ] && cleanup_lv $VG $LV0 $LODEV > /dev/null
+
+prepare_lvmetad
+prepare_lv $VG $LV0
+
+echo ---- AW
+strace -o $TMPDIR/lvremove.strace lvremove -vvvv -y $VG/$LV0 &> $TMPDIR/lvremove.out
+lvcreate -y --size $LVSIZE --name $LV0 $VG
+
+prepare_gdb
+gdb lvm -x lvremote.cmd
