@@ -20,6 +20,11 @@ LVSIZE=5M
 
 declare -a LODEV
 
+# prepare for core dumps
+echo "$(TMPDIR)/core.%e.%p" > /proc/sys/kernel/core_pattern
+#rm $(TMPDIR)/core.*.*
+ulimit -c unlimited
+
 trace ()
 {
     echo "- $*"
@@ -146,8 +151,8 @@ prepare_lvs $COUNT
 #lvs
 
 echo "- time test_lvremove $COUNT"
-(time -p test_lvremove $COUNT) |& tee $TMPDIR/test_remove.time
+(time -p test_lvremove $COUNT) |& tee $TMPDIR/test_lvremove.time
 
 echo "- time test_lvcreate $COUNT"
-(time -p test_lvcreate $COUNT) |& tee $TMPDIR/test_create.time
+(time -p test_lvcreate $COUNT) |& tee $TMPDIR/test_lvcreate.time
 remove_volumes $COUNT $VG $LV $LODEV > /dev/null

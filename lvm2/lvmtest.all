@@ -10,22 +10,29 @@ build()
     bash -x /root/host/lvm2/build $1
 }
 
-runtest()
+runtest1()
 {
     TMPDIR=$TMP USE_LVMETAD=0 /root/host/lvm2/lvmtest
     TMPDIR=$TMP USE_LVMETAD=1 /root/host/lvm2/lvmtest
 }
 
+runtest2()
+{
+    TMPDIR=$TMP USE_LVMETAD=0 /root/host/lvm2/lvmxtest $1
+    TMPDIR=$TMP USE_LVMETAD=1 /root/host/lvm2/lvmxtest $1
+}
+
 build_and_runtest ()
 {
-    build $1 |& tee $LOCALDIR/build.$1
-    runtest  |& tee $LOCALDIR/runtest.$1
+    build $1    |& tee $LOCALDIR/build.$1
+    runtest1    |& tee $LOCALDIR/runtest1.$1
+    runtest2 20 |& tee $LOCALDIR/runtest2.$1
 }
 
 #build_and_runtest v2_02_171
 #build_and_runtest v2_02_176
-build_and_runtest v2_02_177
+#build_and_runtest v2_02_177
 build_and_runtest v2_02_178
-build_and_runtest v2_02_180
+#build_and_runtest v2_02_180
 #build_and_runtest v2_03_02
 #build_and_runtest v2_03_05

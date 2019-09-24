@@ -78,14 +78,17 @@ cleanup_lv ()
 
 prepare_gdb ()
 {
-    ecclvmdho "b persistent_filter_load" > lvremote.cmd
-    echo "b persistent_filter_create" >> lvremote.cmd
-    echo "b label_scan" >> lvremote.cmd
-    echo "b dev_cache_scan" >> lvremote.cmd
-    echo "r lvremove -vvvv -y $VG/$LV0" >> lvremote.cmd
-2}
+    echo "b persistent_filter_load" > lvremove.cmd
+    echo "b persistent_filter_create" >> lvremove.cmd
+    echo "b label_scan" >> lvremove.cmd
+    echo "b dev_cache_scan" >> lvremove.cmd
+    echo "b _dev_cache_iterate_sysfs_for_index" >> lvremove.cmd
+    echo "b refresh_filters" >> lvremove.cmd
+    echo "b init_filters" >> lvremove.cmd
+    echo "r lvremove -vvvv -y $VG/$LV0" >> lvremove.cmd
+}
 
-2111lvm version
+lvm version
 
 LODEV=$(losetup | grep img0 | cut -d' ' -f1)
 [ "$LODEV" != "" ] && cleanup_lv $VG $LV0 $LODEV > /dev/null
@@ -98,4 +101,4 @@ strace -o $TMPDIR/lvremove.strace lvremove -vvvv -y $VG/$LV0 &> $TMPDIR/lvremove
 lvcreate -y --size $LVSIZE --name $LV0 $VG
 
 prepare_gdb
-gdb lvm -x lvremote.cmd
+gdb lvm -x lvremove.cmd
