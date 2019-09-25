@@ -39,9 +39,9 @@ prepare_axxiaarm64 ()
 
 prepare_lvmetad ()
 {
-    local cache_dir=$(grep "cache_dir =" /etc/lvm/lvm.conf | cut -d' '  -f3 | sed 's/"//g')
+    CACHE_DIR=$(grep "cache_dir =" /etc/lvm/lvm.conf | cut -d' '  -f3 | sed 's/"//g')
 
-    rm -f $cache_dir/.cache
+    rm -f $CACHE_DIR/.cache
     rm -f $TMPDIR/pvscan*
     mkdir -p /run/lvm
 
@@ -69,8 +69,9 @@ create_physical_volume ()
     pvscan -vv &> $TMPDIR/pvscan.out
     pvscan -vv --cache &> $TMPDIR/pvscan_cache.out
     vgcreate $volume_group $LODEV
-#    vgscan -vv --cache &> $TMPDIR/vgscan_cache.out
-#    lvscan -vv --cache &> $TMPDIR/lvscan_cache.out
+    vgscan -vv --cache &> $TMPDIR/vgscan_cache.out
+    lvscan -vv --cache &> $TMPDIR/lvscan_cache.out
+    ls -al $CACHE_DIR/.cache
 }
 
 cleanup_lv ()

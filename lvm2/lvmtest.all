@@ -3,7 +3,6 @@ set -e
 
 LOCALDIR=$(dirname $(realpath $0))
 OUTDIR=$(dirname $LOCALDIR)
-TMP=$OUTDIR/tmp_lvm2
 
 build()
 {
@@ -13,14 +12,18 @@ build()
 
 runtest1()
 {
-    TMPDIR=$TMP USE_LVMETAD=0 $LOCALDIR/lvmtest
-    TMPDIR=$TMP USE_LVMETAD=1 $LOCALDIR/lvmtest
+    local tmpdir=$OUTDIR/tmp_lvm2_$1
+
+    TMPDIR=$tmpdir USE_LVMETAD=0 $LOCALDIR/lvmtest
+    TMPDIR=$tmpdir USE_LVMETAD=1 $LOCALDIR/lvmtest
 }
 
 runtest2()
 {
-    TMPDIR=$TMP USE_LVMETAD=0 $LOCALDIR/lvmxtest $1
-    TMPDIR=$TMP USE_LVMETAD=1 $LOCALDIR/lvmxtest $1
+    local tmpdir=$OUTDIR/tmp_lvm2_$1
+
+    TMPDIR=$tmpdir USE_LVMETAD=0 $LOCALDIR/lvmxtest $1
+    TMPDIR=$tmpdir USE_LVMETAD=1 $LOCALDIR/lvmxtest $1
 }
 
 build_and_runtest ()
@@ -43,7 +46,8 @@ build_and_runtest v2_02_177
 #build_and_runtest v2_02_178
 
 #wrl18
-#build_and_runtest v2_02_180
+build_and_runtest v2_02_180
+build_and_runtest v2_02_180_aw
 
 #latest version
 #build_and_runtest v2_03_05
