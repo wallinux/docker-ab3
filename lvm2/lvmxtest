@@ -21,8 +21,8 @@ LVSIZE=5M
 declare -a LODEV
 
 # prepare for core dumps
-echo "$(TMPDIR)/core.%e.%p" > /proc/sys/kernel/core_pattern
-#rm $(TMPDIR)/core.*.*
+echo "/tmp/core.%e.%p" > /proc/sys/kernel/core_pattern
+rm -f /tmp/core.*.*
 ulimit -c unlimited
 
 trace ()
@@ -50,12 +50,12 @@ prepare_lvmetad ()
     if [ $USE_LVMETAD = 1 ]; then
 	mkdir -p /run/lvm
 	sed -i 's/use_lvmetad = 0/use_lvmetad = 1/' /etc/lvm/lvm.conf
-	#pgrep lvmetad && killall lvmetad
-	#lvmetad
+	pgrep lvmetad && killall -w lvmetad
+	lvmetad
     else
 	local cache_dir=$(grep "cache_dir =" /etc/lvm/lvm.conf | cut -d' '  -f3 | sed 's/"//g')
 	sed -i 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf
-	pgrep lvmetad && killall lvmetad
+	pgrep lvmetad && killall -w lvmetad
 	rm -f $cache_dir/.cache
     fi
 }
@@ -156,3 +156,8 @@ echo "- time test_lvremove $COUNT"
 echo "- time test_lvcreate $COUNT"
 (time -p test_lvcreate $COUNT) |& tee $TMPDIR/test_lvcreate.time
 remove_volumes $COUNT $VG $LV $LODEV > /dev/null
+
+if [ -f /tmp/core.* ]; then
+    echo "!!!! FOUND CORE DUMP !!!!"
+    cp /tmp/core.* $TMPDIR
+fi

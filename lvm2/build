@@ -17,6 +17,8 @@ BRANCH=$(echo $TAG | sed 's/v/b/')
 cd /root/lvm2
 make distclean || true
 git checkout $BRANCH 2> /dev/null || git checkout -b $BRANCH $TAG;
+git lver -5
+#./configure --enable-lvmetad --enable-debug --enable-udev_sync --enable-udev_rules
 ./configure --enable-lvmetad --enable-debug
 make
 make install

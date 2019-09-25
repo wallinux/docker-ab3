@@ -14,8 +14,8 @@ LV=lv0
 LVSIZE=90M
 
 # prepare for core dumps
-echo "$(TMPDIR)/core.%e.%p" > /proc/sys/kernel/core_pattern
-#rm $(TMPDIR)/core.*.*
+echo "/tmp/core.%e.%p" > /proc/sys/kernel/core_pattern
+rm -f /tmp/core.*.*
 ulimit -c unlimited
 
 trace ()
@@ -39,17 +39,19 @@ prepare_axxiaarm64 ()
 
 prepare_lvmetad ()
 {
+    local cache_dir=$(grep "cache_dir =" /etc/lvm/lvm.conf | cut -d' '  -f3 | sed 's/"//g')
+
+    rm -f $cache_dir/.cache
     rm -f $TMPDIR/pvscan*
+    mkdir -p /run/lvm
+
     if [ $USE_LVMETAD = 1 ]; then
-	mkdir -p /run/lvm
 	sed -i 's/use_lvmetad = 0/use_lvmetad = 1/' /etc/lvm/lvm.conf
-	pgrep lvmetad && killall lvmetad
+	pgrep lvmetad && killall -w lvmetad
 	lvmetad
     else
-	local cache_dir=$(grep "cache_dir =" /etc/lvm/lvm.conf | cut -d' '  -f3 | sed 's/"//g')
 	sed -i 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf
-	pgrep lvmetad && killall lvmetad
-	rm -f $cache_dir/.cache
+	pgrep lvmetad && killall -w lvmetad
     fi
 }
 
@@ -64,7 +66,7 @@ create_physical_volume ()
     losetup $LODEV $image
     echo ",,8e,," | sfdisk $LODEV
     pvcreate -f $LODEV
-#    pvscan -vv &> $TMPDIR/pvscan.out
+    pvscan -vv &> $TMPDIR/pvscan.out
     pvscan -vv --cache &> $TMPDIR/pvscan_cache.out
     vgcreate $volume_group $LODEV
 #    vgscan -vv --cache &> $TMPDIR/vgscan_cache.out
@@ -170,3 +172,8 @@ if true; then
 fi
 
 cleanup_lv $VG $LV $LODEV > /dev/null
+
+if [ -f /tmp/core.* ]; then
+    echo "!!!! FOUND CORE DUMP !!!!"
+    cp /tmp/core.* $TMPDIR
+fi

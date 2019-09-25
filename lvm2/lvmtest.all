@@ -2,7 +2,8 @@
 set -e
 
 LOCALDIR=$(dirname $(realpath $0))
-TMP=/root/host/tmp_lvm2
+OUTDIR=$(dirname $LOCALDIR)
+TMP=$OUTDIR/tmp_lvm2
 
 build()
 {
@@ -12,27 +13,37 @@ build()
 
 runtest1()
 {
-    TMPDIR=$TMP USE_LVMETAD=0 /root/host/lvm2/lvmtest
-    TMPDIR=$TMP USE_LVMETAD=1 /root/host/lvm2/lvmtest
+    TMPDIR=$TMP USE_LVMETAD=0 $LOCALDIR/lvmtest
+    TMPDIR=$TMP USE_LVMETAD=1 $LOCALDIR/lvmtest
 }
 
 runtest2()
 {
-    TMPDIR=$TMP USE_LVMETAD=0 /root/host/lvm2/lvmxtest $1
-    TMPDIR=$TMP USE_LVMETAD=1 /root/host/lvm2/lvmxtest $1
+    TMPDIR=$TMP USE_LVMETAD=0 $LOCALDIR/lvmxtest $1
+    TMPDIR=$TMP USE_LVMETAD=1 $LOCALDIR/lvmxtest $1
 }
 
 build_and_runtest ()
 {
-    build $1    |& tee $LOCALDIR/build.$1
-    runtest1    |& tee $LOCALDIR/runtest1.$1
-    runtest2 20 |& tee $LOCALDIR/runtest2.$1
+    build $1    |& tee $OUTDIR/build.$1
+    runtest1    |& tee $OUTDIR/runtest1.$1
+    runtest2 20 |& tee $OUTDIR/runtest2.$1
 }
 
+#wrl8
+#build_and_runtest v2_02_125
+
+#wrl17
 #build_and_runtest v2_02_171
-#build_and_runtest v2_02_176
-#build_and_runtest v2_02_177
-build_and_runtest v2_02_178
+
+#last ok
+build_and_runtest v2_02_177
+
+#first failing
+#build_and_runtest v2_02_178
+
+#wrl18
 #build_and_runtest v2_02_180
-#build_and_runtest v2_03_02
+
+#latest version
 #build_and_runtest v2_03_05
