@@ -4,7 +4,7 @@
 [ "$USE_LVMETAD" = "" ] && USE_LVMETAD=0
 
 LVM_VERSION=$(lvm version | head -1 | sed 's/ *//g' | cut -d':' -f2 | cut -d'(' -f1)
-TMPDIR=$TMPDIR-$USE_LVMETAD-$LVM_VERSION
+TMPDIR=$TMPDIR/lvm-$USE_LVMETAD-$LVM_VERSION
 echo $TMPDIR
 mkdir -p $TMPDIR
 
@@ -123,6 +123,9 @@ HOSTNAME=$(hostname)
 [ $HOSTNAME = axxiaarm64-ml ] && prepare_axxiaarm64
 
 lvm version
+uname -a
+lsb_release -a
+
 prepare_lvmetad
 prepare_lv $VG $LV
 

@@ -1,15 +1,17 @@
 #!/bin/bash
-set -e 
+set -e
 [ "$TMPDIR" = "" ] && TMPDIR=/tmp
 [ "$USE_LVMETAD" = "" ] && USE_LVMETAD=0
 if [ $# -gt 0 ]; then
     COUNT=$1
 else
-    [ "$COUNT" = "" ] && COUNT=1
+    [ "$COUNT" = "" ] && COUNT=20
 fi
 
+IMAGE=$TMPDIR/img
+
 LVM_VERSION=$(lvm version | head -1 | sed 's/ *//g' | cut -d':' -f2 | cut -d'(' -f1)
-TMPDIR=$TMPDIR/lvm-$USE_LVMETAD-$LVM_VERSION
+TMPDIR=$TMPDIR/lvmx-$USE_LVMETAD-$LVM_VERSION
 echo "- $TMPDIR"
 mkdir -p $TMPDIR
 
@@ -40,8 +42,9 @@ prepare_axxiaarm64 ()
     fi
 
     echo "tmp fix for labnet issue"
+    set +e
     ip -4 route add via 128.224.95.179 128.224.95.52 dev eth0
-
+    set -e
 }
 
 prepare_lvmetad ()
@@ -64,16 +67,16 @@ prepare_lvmetad ()
 create_volume ()
 {
     local index=$1
-    
+
     local lv=${LV[$index]}
     local image=${IMG[$index]}
     local lodev=$(losetup -f)
 
     LODEV[$index]=$lodev
-    
+
     echo "- create $index"
 
-    [ ! -f $image ] &&dd if=/dev/zero of=$image bs=10 count=1M &> /dev/null
+    cp $IMAGE $image
     losetup $lodev $image
     echo ",,8e,," | sfdisk $lodev &> /dev/null
     pvcreate -f $lodev &> /dev/null
@@ -90,12 +93,15 @@ prepare_lvs ()
 {
     local count=$1
 
+    # prepare a common image
+    [ ! -f $IMAGE ] && dd if=/dev/zero of=$IMAGE bs=10 count=1M &> /dev/null
+
     for i in $(seq 1 $count); do
 	LV[$i]=lv$i
-	IMG[$i]=$TMPDIR/img$i
+	IMG[$i]=${IMAGE}${i}
 	create_volume $i
     done
-    
+
     if [ $USE_LVMETAD = 0 ]; then
 	pvscan -vv &> $TMPDIR/pvscan.out
     else
@@ -109,7 +115,7 @@ remove_volumes ()
 
     lvremove -y $VG
     vgremove -y $VG
-    
+
     for i in $(seq 1 $count); do
 	pvremove ${LODEV[$i]}
 	losetup -d ${LODEV[$i]}
@@ -141,6 +147,8 @@ HOSTNAME=$(hostname)
 [ $HOSTNAME = axxiaarm64-ml ] && prepare_axxiaarm64
 
 lvm version
+uname -a
+lsb_release -a
 echo ""
 
 prepare_lvmetad
