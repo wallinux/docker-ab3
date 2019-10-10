@@ -22,47 +22,7 @@ LVSIZE=5M
 
 declare -a LODEV
 
-# prepare for core dumps
-echo "/tmp/core.%e.%p" > /proc/sys/kernel/core_pattern
-rm -f /tmp/core.*.*
-ulimit -c unlimited
-
-trace ()
-{
-    echo "- $*"
-    $*
-}
-
-prepare_axxiaarm64 ()
-{
-    zcat /proc/config.gz | grep "CONFIG_BLK_DEV_DM=y" > /dev/null
-    if [ $? -ne 0 ]; then
-	echo "dm is not added to the default kernel, need to be added"
-	exit -1
-    fi
-
-    echo "tmp fix for labnet issue"
-    set +e
-    ip -4 route add via 128.224.95.179 128.224.95.52 dev eth0
-    set -e
-}
-
-prepare_lvmetad ()
-{
-    rm -f $TMPDIR/pvscan*
-    if [ $USE_LVMETAD = 1 ]; then
-	mkdir -p /run/lvm
-	sed -i 's/use_lvmetad = 0/use_lvmetad = 1/' /etc/lvm/lvm.conf
-	pgrep lvmetad && killall -w lvmetad
-	lvmetad
-    else
-	local cache_dir=$(grep "cache_dir =" /etc/lvm/lvm.conf | cut -d' '  -f3 | sed 's/"//g')
-	sed -i 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf
-	pgrep lvmetad && killall -w lvmetad
-	rm -f $cache_dir/.cache
-    fi
-}
-
+source $LOCALDIR/lvmtest.common 
 
 create_volume ()
 {
@@ -146,10 +106,7 @@ HOSTNAME=$(hostname)
 [ $HOSTNAME = axxiaarm64-prime ] && prepare_axxiaarm64
 [ $HOSTNAME = axxiaarm64-ml ] && prepare_axxiaarm64
 
-lvm version
-uname -a
-lsb_release -a
-echo ""
+setup
 
 prepare_lvmetad
 

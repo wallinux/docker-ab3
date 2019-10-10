@@ -22,8 +22,8 @@ runtest2()
 {
     local tmpdir=$OUTDIR/tmp_lvm2_$1
 
-    TMPDIR=$tmpdir USE_LVMETAD=0 $LOCALDIR/lvmxtest $1
-    TMPDIR=$tmpdir USE_LVMETAD=1 $LOCALDIR/lvmxtest $1
+    TMPDIR=$tmpdir USE_LVMETAD=0 $LOCALDIR/lvmxtest 20
+    TMPDIR=$tmpdir USE_LVMETAD=1 $LOCALDIR/lvmxtest 20
 }
 
 build_and_runtest ()
@@ -51,3 +51,7 @@ build_and_runtest v2_02_180_aw
 
 #latest version
 #build_and_runtest v2_03_05
+
+# NOTE create a default config
+#lvmconfig --type default  --withcomments --ignorelocal --withspaces >lvm.conf.ne
+
