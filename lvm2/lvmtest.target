@@ -1,0 +1,35 @@
+#!/bin/bash
+set -e
+
+LVM_VERSION=$(lvm version | head -1 | sed 's/ *//g' | cut -d':' -f2 | cut -d'(' -f1)
+
+
+LOCALDIR=$(dirname $(realpath $0))
+OUTDIR=$(dirname $LOCALDIR)/tmp
+
+
+mkdir -p $OUTDIR
+
+runtest1()
+{
+    local tmpdir=$OUTDIR/tmp_runtest1
+
+    TMPDIR=$tmpdir USE_LVMETAD=0 $LOCALDIR/lvmtest
+    TMPDIR=$tmpdir USE_LVMETAD=1 $LOCALDIR/lvmtest
+}
+
+runtest2()
+{
+    local tmpdir=$OUTDIR/tmp_runtest2
+
+    TMPDIR=$tmpdir USE_LVMETAD=0 $LOCALDIR/lvmxtest $1
+    TMPDIR=$tmpdir USE_LVMETAD=1 $LOCALDIR/lvmxtest $1
+}
+
+runtest ()
+{
+    runtest1    |& tee $OUTDIR/runtest1.$1
+    runtest2 20 |& tee $OUTDIR/runtest2.$1
+}
+
+runtest $LVM_VERSION

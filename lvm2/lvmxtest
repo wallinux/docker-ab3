@@ -1,5 +1,8 @@
 #!/bin/bash
-set -e
+#set -e
+
+LOCALDIR=$(dirname $(realpath $0))
+
 [ "$TMPDIR" = "" ] && TMPDIR=/tmp
 [ "$USE_LVMETAD" = "" ] && USE_LVMETAD=0
 if [ $# -gt 0 ]; then

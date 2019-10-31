@@ -2,17 +2,18 @@
 set -e
 
 LOCALDIR=$(dirname $(realpath $0))
-OUTDIR=$(dirname $LOCALDIR)
+OUTDIR=$(dirname $LOCALDIR)/tmp
+mkdir -p $OUTDIR
 
 build()
 {
     cd /root/lvm2
-    bash -x /root/host/lvm2/build $1
+    bash +x /root/host/lvm2/build $1
 }
 
 runtest1()
 {
-    local tmpdir=$OUTDIR/tmp_lvm2_$1
+    local tmpdir=$OUTDIR/tmp_runtest1
 
     TMPDIR=$tmpdir USE_LVMETAD=0 $LOCALDIR/lvmtest
     TMPDIR=$tmpdir USE_LVMETAD=1 $LOCALDIR/lvmtest
@@ -20,10 +21,18 @@ runtest1()
 
 runtest2()
 {
-    local tmpdir=$OUTDIR/tmp_lvm2_$1
+    local tmpdir=$OUTDIR/tmp_runtest2
 
-    TMPDIR=$tmpdir USE_LVMETAD=0 $LOCALDIR/lvmxtest 20
-    TMPDIR=$tmpdir USE_LVMETAD=1 $LOCALDIR/lvmxtest 20
+    TMPDIR=$tmpdir USE_LVMETAD=0 $LOCALDIR/lvmxtest $1
+    TMPDIR=$tmpdir USE_LVMETAD=1 $LOCALDIR/lvmxtest $1
+}
+
+runtest3()
+{
+    local tmpdir=$OUTDIR/tmp_runtest3
+
+    TMPDIR=$tmpdir USE_LVMETAD=0 $LOCALDIR/lvmtest2 $1
+    TMPDIR=$tmpdir USE_LVMETAD=1 $LOCALDIR/lvmtest2 $1
 }
 
 build_and_runtest ()
@@ -47,11 +56,7 @@ build_and_runtest v2_02_177
 
 #wrl18
 build_and_runtest v2_02_180
-build_and_runtest v2_02_180_aw
+#build_and_runtest v2_02_180_aw
 
 #latest version
 #build_and_runtest v2_03_05
-
-# NOTE create a default config
-#lvmconfig --type default  --withcomments --ignorelocal --withspaces >lvm.conf.ne
-

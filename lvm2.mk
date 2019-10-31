@@ -62,5 +62,3 @@ lvm2.help:
 	$(call run-help, lvm2.mk)
 
 help:: lvm2.help
-
-pull:: lvm2.pull

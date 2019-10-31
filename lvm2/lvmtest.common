@@ -1,0 +1,70 @@
+#!/bin/bash
+
+trace ()
+{
+    echo "- $*"
+    $*
+}
+
+prepare_axxiaarm64 ()
+{
+    zcat /proc/config.gz | grep "CONFIG_BLK_DEV_DM=y" > /dev/null
+    if [ $? -ne 0 ]; then
+	echo "dm is not added to the default kernel, need to be added"
+	exit -1
+    fi
+
+    echo "tmp fix for labnet issue"
+    ip -4 route add via 128.224.95.179 128.224.95.52 dev eth0 || true
+
+}
+
+prepare_lvmetad ()
+{
+    CACHE_DIR=$(grep 'cache_dir=\|cache_dir =' /etc/lvm/lvm.conf | cut -d' '  -f3 | sed 's/"//g')
+    [ "$CACHE_DIR" != "" ] && rm -f $CACHE_DIR/.cache
+    rm -f $TMPDIR/pvscan*
+    mkdir -p /run/lvm
+
+    if [ $USE_LVMETAD = 1 ]; then
+	sed -i -e '/use_lvmetad/ s/=.*/=1/' /etc/lvm/lvm.conf
+	pgrep lvmetad && killall -w lvmetad
+	lvmetad
+    else
+	sed -i -e '/use_lvmetad/ s/=.*/=0/' /etc/lvm/lvm.conf
+	pgrep lvmetad && killall -w lvmetad
+    fi
+}
+
+setup ()
+{
+    #lvmconfig --type default  --withcomments --ignorelocal --withspaces -f $TMPDIR/lvm.conf
+    lvmconfig --type default  --ignorelocal --withspaces -f $TMPDIR/lvm.conf.org
+    cp $TMPDIR/lvm.conf.org $TMPDIR/lvm.conf
+    sed -i -e '/obtain_device_list_from_udev / s/=.*/= 0/' $TMPDIR/lvm.conf
+    sed -i -e '/udev_sync / s/=.*/= 0/' $TMPDIR/lvm.conf
+    sed -i -e '/udev_rules / s/=.*/= 0/' $TMPDIR/lvm.conf
+    sed -i -e '/archive / s/=.*/= 0/' $TMPDIR/lvm.conf
+    #sed -i -e '/backup / s/=.*/= 0/' $TMPDIR/lvm.conf
+    if [ "$CONFIG" = "" ]; then
+	cp $TMPDIR/lvm.conf /etc/lvm/
+    elif [ -f $CONFIG ]; then
+	cp $CONFIG /etc/lvm/lvm.conf;
+    else
+	echo "$CONFIG is missing"
+	exit 2;
+    fi
+    lvmconfig --validate || exit 3
+
+    # prepare for core dumps
+    echo "/tmp/core.%e.%p" > /proc/sys/kernel/core_pattern
+    rm -f /tmp/core.*.*
+    ulimit -c unlimited
+
+    #run w/o udevd
+    pgrep udevd && killall -w udevd
+    
+    lvm version
+    uname -a
+    lsb_release -a
+}
