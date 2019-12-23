@@ -16,3 +16,4 @@ autoreconf
 make -j
 make -j docs
 make -j install
+exit 0

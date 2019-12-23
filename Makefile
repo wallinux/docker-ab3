@@ -20,6 +20,7 @@ include jenkins.mk
 #include u-boot.mk
 #include openldap.mk
 include lvm2.mk
+include ubuntu.mk
 
 pull:: # Update all images
 	$(TRACE)
