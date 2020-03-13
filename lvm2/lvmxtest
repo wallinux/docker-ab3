@@ -15,8 +15,6 @@ IMAGE=$TMPDIR/img
 
 LVM_VERSION=$(lvm version | head -1 | sed 's/ *//g' | cut -d':' -f2 | cut -d'(' -f1)
 TMPDIR=$TMPDIR/lvmx-$USE_LVMETAD-$LVM_VERSION
-echo "- $TMPDIR"
-mkdir -p $TMPDIR
 
 VG=prime
 declare -a IMG
@@ -104,6 +102,10 @@ test_lvcreate ()
 }
 
 #######################################################################
+
+trace "$TMPDIR"
+[ "$1" = "clean" ] && rm -rf $TMPDIR
+mkdir -p $TMPDIR
 
 HOSTNAME=$(hostname)
 [ $HOSTNAME = axxiaarm64-prime ] && prepare_axxiaarm64

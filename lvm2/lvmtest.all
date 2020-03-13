@@ -38,8 +38,9 @@ runtest3()
 build_and_runtest ()
 {
     build $1    |& tee $OUTDIR/build.$1
-    runtest1    |& tee $OUTDIR/runtest1.$1
-    runtest2 20 |& tee $OUTDIR/runtest2.$1
+    #runtest1    |& tee $OUTDIR/runtest1.$1
+    #runtest2 20 |& tee $OUTDIR/runtest2.$1
+    runtest3 20 |& tee $OUTDIR/runtest3.$1
 }
 
 #wrl8

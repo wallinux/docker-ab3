@@ -3,18 +3,24 @@
 trace ()
 {
     echo "- $*"
+}
+
+tracecmd ()
+{
+    echo "- $*"
     $*
 }
+
 
 prepare_axxiaarm64 ()
 {
     zcat /proc/config.gz | grep "CONFIG_BLK_DEV_DM=y" > /dev/null
     if [ $? -ne 0 ]; then
-	echo "dm is not added to the default kernel, need to be added"
+	trace "dm is not added to the default kernel, need to be added"
 	exit -1
     fi
 
-    echo "tmp fix for labnet issue"
+    trace "tmp fix for labnet issue"
     ip -4 route add via 128.224.95.179 128.224.95.52 dev eth0 || true
 
 }
@@ -34,6 +40,9 @@ prepare_lvmetad ()
 	sed -i -e '/use_lvmetad/ s/=.*/=0/' /etc/lvm/lvm.conf
 	pgrep lvmetad && killall -w lvmetad
     fi
+    trace "pvscan & pvscan --cache"
+    pvscan
+    pvscan --cache
 }
 
 setup ()
@@ -51,7 +60,7 @@ setup ()
     elif [ -f $CONFIG ]; then
 	cp $CONFIG /etc/lvm/lvm.conf;
     else
-	echo "$CONFIG is missing"
+	trace "$CONFIG is missing"
 	exit 2;
     fi
     lvmconfig --validate || exit 3
