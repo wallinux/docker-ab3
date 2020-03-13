@@ -1,6 +1,6 @@
 # lttng.mk
 LTTNG_TAGS		?= rcs stable-2.10 stable-2.11
-LTTNG_TAG		?= rcs
+LTTNG_TAG		?= stable-2.11
 LTTNG_IMAGE		= lttng:$(LTTNG_TAG)
 LTTNG_CONTAINER		= lttng_$(LTTNG_TAG)
 LTTNG_HOSTIP		= $(shell /sbin/ifconfig | grep 128.224 | cut -d: -f 2 | cut -d' ' -f 1)
