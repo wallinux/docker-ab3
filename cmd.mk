@@ -2,7 +2,7 @@
 
 MAKE	= $(Q)make -s
 ECHO 	= $(Q)echo
-DOCKER	= $(Q)docker
+DOCKER	?= $(Q)docker
 MKDIR	= $(Q)mkdir -p
 RM	= $(Q)rm -f
 CP	= $(Q)cp
