@@ -33,7 +33,7 @@ docker.rmi: # Remove all dangling images
 	$(TRACE)
 	$(DOCKER) images -q -f dangling=true | xargs docker rmi
 
-clean:
+clean::
 	$(RM) -r $(STAMPSDIR)
 
 docker.help:

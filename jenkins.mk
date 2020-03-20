@@ -1,10 +1,5 @@
 # jenkins.mk
 ################################################################
-
-## jenkins after 2.116 is not working with a cpuset bigger then 64
-
-
-#JENKINS_REMOTE_TAG ?= 2.121.3
 JENKINS_REMOTE_TAG ?= lts
 JENKINS_REMOTE_IMAGE = jenkins/jenkins:$(JENKINS_REMOTE_TAG)
 JENKINS_IMAGE 	  = jenkins
@@ -12,15 +7,19 @@ JENKINS_CONTAINER = rcs_eprime_jenkins
 JENKINS_TAG 	  = $(JENKINS_CONTAINER)
 JENKINS_PORT	  ?= 8091
 JENKINS_HOME	  ?= /var/jenkins_home
-JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -s http://127.0.0.1:$(JENKINS_PORT)/
-WR_INSTALLS	  = /wr/installs
+JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -auth jenkins_cli:jenkins_cli -s http://localhost:$(JENKINS_PORT)/
 
 JENKINS_OPTS	  = --httpPort=$(JENKINS_PORT)
 JENKINS_LOG	  = log.properties
+
+JENKINS_EXEC_jenkins = $(DOCKER) exec -u jenkins $(JENKINS_CONTAINER)
+JENKINS_EXEC_root    = $(DOCKER) exec -u root    $(JENKINS_CONTAINER)
 ################################################################
 
+.PHONY: jenkins.*
+
 jenkins.log:
-	$(MKDIR) -p jenkins/
+	$(MKDIR) jenkins/
 	$(ECHO) "handlers=java.util.logging.ConsoleHandler" > jenkins/$(JENKINS_LOG)
 	$(ECHO) "jenkins.level=FINEST" >> jenkins/$(JENKINS_LOG)
 	$(ECHO) "java.util.logging.ConsoleHandler.level=FINEST" >> jenkins/$(JENKINS_LOG)
@@ -31,12 +30,12 @@ jenkins.prepare:
 	$(eval docker_gid=$(shell getent group docker | cut -d: -f3))
 	$(eval host_timezone=$(shell cat /etc/timezone))
 	$(DOCKER) start $(JENKINS_CONTAINER)
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get update
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get install make bsdmainutils libltdl7
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) usermod -g users jenkins
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) groupadd --gid $(docker_gid) docker
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) usermod -aG docker jenkins
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) sh -c "echo $(host_timezone) >/etc/timezone && ln -sf /usr/share/zoneinfo/$(host_timezone) /etc/localtime && dpkg-reconfigure -f noninteractive tzdata"
+	$(JENKINS_EXEC_root) apt-get update
+	$(JENKINS_EXEC_root) apt-get install make bsdmainutils libltdl7
+	$(JENKINS_EXEC_root) usermod -g users jenkins
+	$(JENKINS_EXEC_root) groupadd --gid $(docker_gid) docker
+	$(JENKINS_EXEC_root) usermod -aG docker jenkins
+	$(JENKINS_EXEC_root) sh -c "echo $(host_timezone) >/etc/timezone && ln -sf /usr/share/zoneinfo/$(host_timezone) /etc/localtime && dpkg-reconfigure -f noninteractive tzdata"
 	$(DOCKER) stop $(JENKINS_CONTAINER)
 	$(DOCKER) commit $(JENKINS_CONTAINER) $(JENKINS_IMAGE):$(JENKINS_TAG)
 
@@ -67,7 +66,7 @@ jenkins.start: jenkins.create # Start jenkins container
 
 jenkins.stop: # Stop jenkins container
 	$(TRACE)
-	$(DOCKER) stop $(JENKINS_CONTAINER)
+	-$(DOCKER) stop -t 2 $(JENKINS_CONTAINER)
 
 jenkins.logs: # Show jenkins container logs
 	$(TRACE)
@@ -75,31 +74,36 @@ jenkins.logs: # Show jenkins container logs
 
 jenkins.rm: # Remove jenkins container
 	$(TRACE)
-	$(DOCKER) rm $(JENKINS_CONTAINER)
+	-$(DOCKER) rm $(JENKINS_CONTAINER)
 
 jenkins.rmi: # Remove jenkins image
 	$(TRACE)
-	$(DOCKER) rmi $(JENKINS_IMAGE):$(JENKINS_TAG)
+	-$(DOCKER) rmi $(JENKINS_IMAGE):$(JENKINS_TAG)
 	$(call rmstamp,jenkins.create)
+
+jenkins.clean:
+	$(MAKE) jenkins.stop
+	$(MAKE) jenkins.rm
+	$(MAKE) jenkins.rmi
 
 jenkins.update.apt: jenkins.start
 	$(TRACE)
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get update
-	$(DOCKER) exec -u root $(JENKINS_CONTAINER) apt-get upgrade -y
+	$(JENKINS_EXEC_root) apt-get update
+	$(JENKINS_EXEC_root) apt-get upgrade -y
 
 jenkins.update.plugins: jenkins.start
 	$(TRACE)
-	$(DOCKER) exec -u jenkins $(JENKINS_CONTAINER) sh -c "$(JENKINS_CLI) list-plugins | grep -e ')$$' | awk '{ print $$1 }' > $(JENKINS_HOME)/plugin_updatelist"
+	$(JENKINS_EXEC_jenkins) $(JENKINS_CLI) list-plugins | grep -e ')$$' | awk '{ print $$1 }' > $(JENKINS_HOME)/plugin_updatelist
 	$(ECHO) "#!/bin/bash" >$(JENKINS_HOME)/plugin_updatelist.sh
 	$(ECHO) "if [ -s $(JENKINS_HOME)/plugin_updatelist ]; then"  >> $(JENKINS_HOME)/plugin_updatelist.sh
 	$(ECHO) '  update_pluginlist=$$(cat $(JENKINS_HOME)/plugin_updatelist)' >> $(JENKINS_HOME)/plugin_updatelist.sh
 	$(ECHO) '  $(JENKINS_CLI) install-plugin $$update_pluginlist' >> $(JENKINS_HOME)/plugin_updatelist.sh
 	$(ECHO) 'fi' >> $(JENKINS_HOME)/plugin_updatelist.sh
-	$(Q)chmod +x $(JENKINS_HOME)/plugin_updatelist.sh
-	$(Q)cat $(JENKINS_HOME)/plugin_updatelist.sh
-	$(DOCKER) exec -u jenkins $(JENKINS_CONTAINER) sh -c $(JENKINS_HOME)/plugin_updatelist.sh
-	$(DOCKER) exec -u jenkins $(JENKINS_CONTAINER) $(JENKINS_CLI) safe-restart
-	$(RM) $(JENKINS_HOME)/plugin_updatelist.sh $(JENKINS_HOME)/plugin_updatelist
+	$(Q)chmod 777 $(JENKINS_HOME)/plugin_updatelist.sh
+	$(JENKINS_EXEC_jenkins) cat $(JENKINS_HOME)/plugin_updatelist
+	$(JENKINS_EXEC_jenkins) sh -c $(JENKINS_HOME)/plugin_updatelist.sh
+	$(JENKINS_EXEC_jenkins) $(JENKINS_CLI) safe-restart
+	$(JENKINS_EXEC_jenkins) rm -f $(JENKINS_HOME)/plugin_updatelist.sh $(JENKINS_HOME)/plugin_updatelist
 
 jenkins.update: jenkins.update.apt jenkins.update.plugins # Update rpm packages and jenkins plugins
 	$(TRACE)
