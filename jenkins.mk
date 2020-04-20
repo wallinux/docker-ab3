@@ -7,7 +7,8 @@ JENKINS_CONTAINER = rcs_eprime_jenkins
 JENKINS_TAG 	  = $(JENKINS_CONTAINER)
 JENKINS_PORT	  ?= 8091
 JENKINS_HOME	  ?= /var/jenkins_home
-JENKINS_CLI	  = java -jar $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar -auth jenkins_cli:jenkins_cli -s http://localhost:$(JENKINS_PORT)/
+JENKINS_CLI_JAR	  = $(JENKINS_HOME)/war/WEB-INF/jenkins-cli.jar
+JENKINS_CLI	  = java -jar $(JENKINS_CLI_JAR) -auth jenkins_cli:jenkins_cli -s http://localhost:$(JENKINS_PORT)/
 
 JENKINS_OPTS	  = --httpPort=$(JENKINS_PORT)
 JENKINS_LOG	  = log.properties
@@ -91,7 +92,10 @@ jenkins.update.apt: jenkins.start
 	$(JENKINS_EXEC_root) apt-get update
 	$(JENKINS_EXEC_root) apt-get upgrade -y
 
-jenkins.update.plugins: jenkins.start
+$(JENKINS_CLI_JAR):
+	$(DOCKER) exec -u jenkins -it $(JENKINS_CONTAINER) /bin/bash -c "wget http://localhost:8091/jnlpJars/jenkins-cli.jar; mv jenkins-cli.jar $@"
+
+jenkins.update.plugins: jenkins.start $(JENKINS_CLI_JAR)
 	$(TRACE)
 	$(JENKINS_EXEC_jenkins) $(JENKINS_CLI) list-plugins | grep -e ')$$' | awk '{ print $$1 }' > $(JENKINS_HOME)/plugin_updatelist
 	$(ECHO) "#!/bin/bash" >$(JENKINS_HOME)/plugin_updatelist.sh
