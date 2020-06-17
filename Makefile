@@ -22,9 +22,7 @@ include jenkins.mk
 include lvm2.mk
 include ubuntu.mk
 
-pull:: # Update all images
-	$(TRACE)
-
+################################################################
 docker.rm: # Remove all dangling containers
 	$(TRACE)
 	$(DOCKER) ps -qa --filter "status=exited" | xargs docker rm
@@ -33,11 +31,16 @@ docker.rmi: # Remove all dangling images
 	$(TRACE)
 	$(DOCKER) images -q -f dangling=true | xargs docker rmi
 
-clean::
-	$(RM) -r $(STAMPSDIR)
-
 docker.help:
 	$(call run-help, Makefile)
+
+################################################################
+
+pull:: # Update all images
+	$(TRACE)
+
+clean::
+	$(RM) -r $(STAMPSDIR)
 
 help:: docker.help # Show available rules and info about them
 	$(TRACE)
