@@ -20,6 +20,7 @@ include jenkins.mk
 #include openldap.mk
 include lvm2.mk
 include ubuntu.mk
+include codechecker.mk
 
 ################################################################
 docker.rm: # Remove all dangling containers
