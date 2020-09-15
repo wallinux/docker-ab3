@@ -1,14 +1,15 @@
 # cmd.mk
 
-MAKE	= $(Q)make -s
-ECHO 	= $(Q)echo
-DOCKER	?= $(Q)docker
-MKDIR	= $(Q)mkdir -p
-RM	= $(Q)rm -f
 CP	= $(Q)cp
-RED 	= $(Q)tput setaf 1
+DOCKER	= $(Q)docker
+ECHO 	= $(Q)echo
 GREEN 	= $(Q)tput setaf 2
+MAKE	= $(Q)make -s
+MKDIR	= $(Q)mkdir -p
 NORMAL 	= $(Q)tput sgr0
+PODMAN	= $(Q)podman
+RED 	= $(Q)tput setaf 1
+RM	= $(Q)rm -f
 
 define run-note
 	$(GREEN)

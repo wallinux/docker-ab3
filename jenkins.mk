@@ -112,7 +112,7 @@ jenkins.update.plugins: jenkins.start $(JENKINS_CLI_JAR)
 jenkins.update: jenkins.update.apt jenkins.update.plugins # Update rpm packages and jenkins plugins
 	$(TRACE)
 
-jenkins.shell: # Start a shell in jenkins container
+jenkins.shell: jenkins.start # Start a shell in jenkins container
 	$(TRACE)
 	$(DOCKER) exec -u jenkins -it $(JENKINS_CONTAINER) /bin/bash -c "cd $(JENKINS_HOME); exec '$${SHELL:-sh}'"
 
