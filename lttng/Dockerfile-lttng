@@ -4,4 +4,7 @@ ARG LTTNG_TAG
 
 # Building lttng repos
 RUN (cd lttng-test; make $LTTNG_TAG.checkout)
-RUN (cd lttng-test; make ALL)
+RUN (cd lttng-test; make install.userspace-rcu)
+RUN (cd lttng-test; make install.lttng-ust)
+RUN (cd lttng-test; make install.babeltrace)
+RUN (cd lttng-test; make install.lttng-tools)
