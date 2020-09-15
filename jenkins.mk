@@ -128,11 +128,12 @@ jenkins.pull:
 	$(TRACE)
 	$(DOCKER) pull $(JENKINS_REMOTE_IMAGE)
 
-pull:: jenkins.pull
-	$(TRACE)
-
 jenkins.help:
 	$(TRACE)
 	$(call run-help, jenkins.mk)
+
+################################################################
+pull:: jenkins.pull
+	$(TRACE)
 
 help:: jenkins.help

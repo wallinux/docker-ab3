@@ -2,7 +2,6 @@ default: help
 
 include common.mk
 
-DNS		?= $(shell nslookup google.com | grep Server | cut -f3)
 DNS		?= 8.8.8.8
 DOCKER_ID_USER	?= wallinux
 
