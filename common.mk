@@ -20,7 +20,7 @@ export Q=@
 endif
 export V
 
-.PHONY: *.help
+.PHONY:: *.help
 
 define run-help
 	$(GREEN)

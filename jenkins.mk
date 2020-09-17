@@ -17,7 +17,7 @@ JENKINS_EXEC_jenkins = $(DOCKER) exec -u jenkins $(JENKINS_CONTAINER)
 JENKINS_EXEC_root    = $(DOCKER) exec -u root    $(JENKINS_CONTAINER)
 ################################################################
 
-.PHONY: jenkins.*
+.PHONY:: jenkins.*
 
 jenkins.log:
 	$(MKDIR) jenkins/

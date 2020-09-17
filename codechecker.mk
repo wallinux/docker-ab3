@@ -8,7 +8,7 @@ CODECHECKER_CONTAINER	?= codechecker
 
 #######################################################################
 
-.PHONY: codecchecker.*
+.PHONY:: codecchecker.*
 
 $(CODECHECKER_MOUNT):
 	$(TRACE)
