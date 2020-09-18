@@ -116,6 +116,10 @@ lttng.rebuild: lttng.start # Rebuild lttng in the container
 lttng.tag:
 	$(DOCKER) tag $(LTTNG_IMAGE) $(REGISTRY_SERVER)/$(LTTNG_IMAGE)
 
+lttng.clean: lttng.rm lttng.rmi
+	$(TRACE)
+	-$(DOCKER) rmi lttng
+
 lttng.distclean: lttng.RM lttng.RMI
 
 lttng.help:
