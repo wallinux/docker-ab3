@@ -29,12 +29,6 @@ lttng.RMI: # Remove ALL lttng images
 	-$(DOCKER) rmi lttng
 	$(call rmstamp,lttng.build)
 
-lttng.PUSH: # Remove ALL lttng container
-	$(foreach tag, $(LTTNG_TAGS), make -s lttng.push LTTNG_TAG=$(tag); )
-
-lttng.PULL: # Remove ALL lttng container
-	$(foreach tag, $(LTTNG_TAGS), make -s lttng.pull LTTNG_TAG=$(tag); )
-
 ################################################################
 lttng.build: # Build lttng image
 	$(TRACE)
@@ -122,12 +116,6 @@ lttng.rebuild: lttng.start # Rebuild lttng in the container
 lttng.tag:
 	$(DOCKER) tag $(LTTNG_IMAGE) $(REGISTRY_SERVER)/$(LTTNG_IMAGE)
 
-lttng.push: lttng.tag # Push image to local registry
-	$(DOCKER) push $(REGISTRY_SERVER)/$(LTTNG_IMAGE)
-
-lttng.pull: # Pull image from local registry
-	$(DOCKER) pull $(REGISTRY_SERVER)/$(LTTNG_IMAGE)
-
 lttng.distclean: lttng.RM lttng.RMI
 
 lttng.help:
@@ -138,8 +126,6 @@ lttng.help:
 	$(call run-note, "- LTTNG_HOSTIP = $(LTTNG_HOSTIP)")
 
 ################################################################
-
-pull:: lttng.pull
 
 help:: lttng.help
 
