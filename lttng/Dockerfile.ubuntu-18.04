@@ -16,6 +16,7 @@ RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y git libpopt-dev uuid-dev 
 	bison make libc6 libc6-dev libglib2.0-0 libglib2.0-dev libpopt-dev python-pip python-dev emacs tzdata tmux
 RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y libelf-dev libdw-dev tig gdb sshpass
 RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y asciidoc xmlto groff man kmod
+RUN DEBIAN_FRONTEND=noninteractive; apt-get install -y libnuma-dev
 
 # Installing lttng repos
 RUN (git clone https://github.com/wallinux/lttng-test.git)
