@@ -44,9 +44,15 @@ codechecker.rmi: # remove codechecker docker image
 	$(TRACE)
 	$(DOCKER) rmi $(CODECHECKER_IMAGE)
 
+codechecker.pull: # download the image
+	$(TRACE)
+	$(DOCKER) pull $(CODECHECKER_IMAGE)
+
 codechecker.help:
 	$(call run-help, codechecker.mk)
 
 #######################################################################
 
 help:: codechecker.help
+
+pull:: codechecker.pull
