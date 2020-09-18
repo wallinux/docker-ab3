@@ -21,9 +21,13 @@ CHECK_OPT=""
 source ~/codechecker/venv/bin/activate
 export PATH=~/codechecker/build/CodeChecker/bin:$PATH
 CodeChecker check $CHECK_OPT --quiet --clean --build "make -C $BUILDDIR" -j10 -o $RESULTSDIR
-if [ $? = 0 ]; then
+status=$?
+if [ $status = 0 ]; then
     CodeChecker parse --trim-path-prefix --export html -o $REPORTSDIR $RESULTSDIR
     CodeChecker store --trim-path-prefix --name $PACKAGE-$TAG --trim-path-prefix --url $URL $RESULTSDIR
+    status=$?
 else
     echo "FAILED: CodeChecker check $CHECK_OPT --quiet --clean --build make -C $BUILDDIR -j10 -o $RESULTSDIR"
 fi
+
+exit $status
