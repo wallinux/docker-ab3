@@ -21,13 +21,8 @@ lttng.ALL: lttng.CREATE
 lttng.CREATE: # Create ALL lttng container
 	$(foreach tag,$(LTTNG_TAGS), make -s lttng.create LTTNG_TAG=$(tag); )
 
-lttng.RM: # Remove ALL lttng container
-	$(foreach tag, $(LTTNG_TAGS), make -s lttng.rm LTTNG_TAG=$(tag); )
-
-lttng.RMI: # Remove ALL lttng images
-	-$(foreach tag, $(LTTNG_TAGS), make -s lttng.rmi LTTNG_TAG=$(tag); )
-	-$(DOCKER) rmi lttng
-	$(call rmstamp,lttng.build)
+lttng.DISTCLEAN: # Remove ALL lttng images and containers
+	-$(foreach tag, $(LTTNG_TAGS), make -s lttng.distclean LTTNG_TAG=$(tag); )	$(call rmstamp,lttng.build)
 
 ################################################################
 lttng.build: # Build lttng image
@@ -116,11 +111,15 @@ lttng.rebuild: lttng.start # Rebuild lttng in the container
 lttng.tag:
 	$(DOCKER) tag $(LTTNG_IMAGE) $(REGISTRY_SERVER)/$(LTTNG_IMAGE)
 
-lttng.clean: lttng.rm lttng.rmi
+lttng.clean: # delete lttng container and image
+	$(TRACE)
+	-$(MAKE) lttng.cc.clean
+	-$(MAKE) lttng.rm
+	-$(MAKE) lttng.rmi
+
+lttng.distclean: lttng.clean # call lttng.clean and remove lttng base image
 	$(TRACE)
 	-$(DOCKER) rmi lttng
-
-lttng.distclean: lttng.RM lttng.RMI
 
 lttng.help:
 	$(TRACE)

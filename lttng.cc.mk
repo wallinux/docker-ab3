@@ -38,7 +38,7 @@ lttng.cc.clean: # remove codechecker from docker image
 	-$(call rmstamp,lttng.cc.build)
 
 CCOPT ?= 0
-lttng.cc.%: lttng.cc.build # run codechecker on package %
+lttng.cc.%: lttng.cc.build # run codechecker for package %
 	$(TRACE)
 	$(DOCKER) cp lttng/codechecker.sh $(LTTNG_CONTAINER):/root/codechecker.sh
 	$(call run-docker-exec, -t, bash -c "/root/codechecker.sh $* $(CCOPT)")
