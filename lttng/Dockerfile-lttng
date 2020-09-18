@@ -3,6 +3,7 @@ MAINTAINER Anders Wallin
 ARG LTTNG_TAG
 
 # Building lttng repos
+RUN (cd lttng-test; git pull)
 RUN (cd lttng-test; make repo.pull)
 RUN (cd lttng-test; make $LTTNG_TAG.checkout)
 RUN (cd lttng-test; make install.userspace-rcu)

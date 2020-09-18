@@ -38,7 +38,7 @@ lttng.build: # Build lttng image
 
 lttng.build.% : lttng.build
 	$(TRACE)
-	$(DOCKER) build -f lttng/Dockerfile-lttng --build-arg LTTNG_TAG=$* -t "lttng:$*" .
+	$(DOCKER) build --no-cache -f lttng/Dockerfile-lttng --build-arg LTTNG_TAG=$* -t "lttng:$*" .
 	$(MKSTAMP)
 
 lttng.prepare:
