@@ -1,6 +1,6 @@
 # lttng.mk
 LTTNG_DISTRO		?= ubuntu-20.04
-LTTNG_TAGS		?= rcs stable-2.10 stable-2.11
+LTTNG_TAGS		?= rcs stable-2.10 stable-2.11 stable-2.12 master
 LTTNG_TAG		?= rcs
 LTTNG_IMAGE		= lttng:$(LTTNG_TAG)
 LTTNG_CONTAINER		= lttng_$(LTTNG_TAG)
