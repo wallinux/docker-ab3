@@ -18,19 +18,20 @@ include jenkins.mk
 #include openldap.mk
 include lvm2.mk
 include ubuntu.mk
+include cc_server.mk
+
+include docker.mk
 include codechecker.mk
 
+
 ################################################################
-docker.rm: # Remove all dangling containers
+docker.RM: # Remove all dangling containers
 	$(TRACE)
 	$(DOCKER) ps -qa --filter "status=exited" | xargs docker rm
 
-docker.rmi: # Remove all dangling images
+docker.RMI: # Remove all dangling images
 	$(TRACE)
 	$(DOCKER) images -q -f dangling=true | xargs docker rmi
-
-docker.help:
-	$(call run-help, Makefile)
 
 ################################################################
 
@@ -40,5 +41,6 @@ pull:: # Update all images
 clean::
 	$(RM) -r $(STAMPSDIR)
 
-help:: docker.help # Show available rules and info about them
+help:: # Show available rules and info about them
 	$(TRACE)
+	$(call run-help, Makefile)

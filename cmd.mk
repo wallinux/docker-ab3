@@ -1,5 +1,6 @@
 # cmd.mk
 
+IF	= $(Q)if
 CP	= $(Q)cp
 DOCKER	= $(Q)docker
 ECHO 	= $(Q)echo
