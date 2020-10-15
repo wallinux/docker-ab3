@@ -13,8 +13,6 @@ include lttng.mk
 include snmp.mk
 #include gitea.mk
 #include gitlab.mk
-#include wrlinux_builder.mk
-include wrlinux.mk
 include jenkins.mk
 #include u-boot.mk
 #include openldap.mk
