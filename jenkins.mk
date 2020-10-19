@@ -19,6 +19,15 @@ JENKINS_EXEC_root    = $(DOCKER) exec -u root    $(JENKINS_CONTAINER)
 
 .PHONY:: jenkins.*
 
+jenkins.build: jenkins/Dockerfile # build jenkins image
+	$(TRACE)
+ifneq ($(V),1)
+	$(eval quiet=-q)
+endif
+	$(DOCKER) build $(quiet) $(DOCKER_BUILDARGS) --pull -f $< \
+		-t "$(JENKINS_IMAGE)" jenkins; \
+	$(MKSTAMP)
+
 jenkins.log:
 	$(MKDIR) jenkins/
 	$(ECHO) "handlers=java.util.logging.ConsoleHandler" > jenkins/$(JENKINS_LOG)
@@ -31,9 +40,7 @@ jenkins.prepare:
 	$(eval docker_gid=$(shell getent group docker | cut -d: -f3))
 	$(eval host_timezone=$(shell cat /etc/timezone))
 	$(DOCKER) start $(JENKINS_CONTAINER)
-	$(JENKINS_EXEC_root) apt-get update
-	$(JENKINS_EXEC_root) apt-get install make bsdmainutils libltdl7
-	$(JENKINS_EXEC_root) usermod -g users jenkins
+#	$(JENKINS_EXEC_root) usermod -g users jenkins
 	$(JENKINS_EXEC_root) groupadd --gid $(docker_gid) docker
 	$(JENKINS_EXEC_root) usermod -aG docker jenkins
 	$(JENKINS_EXEC_root) sh -c "echo $(host_timezone) >/etc/timezone && ln -sf /usr/share/zoneinfo/$(host_timezone) /etc/localtime && dpkg-reconfigure -f noninteractive tzdata"
@@ -44,7 +51,7 @@ jenkins.dockerhost:
 	$(TRACE)
 	$(ECHO) $$(hostname) > $(JENKINS_HOME)/dockerhost
 
-jenkins.create: # Create jenkins container
+jenkins.create: jenkins.build # Create jenkins container
 	$(TRACE)
 	$(eval docker_bin=$(shell which docker))
 	$(DOCKER) create -P --name $(JENKINS_CONTAINER) \
@@ -57,7 +64,7 @@ jenkins.create: # Create jenkins container
 		--dns-search=wrs.com \
 		-p $(JENKINS_PORT):$(JENKINS_PORT) \
 		-e "JENKINS_OPTS=$(JENKINS_OPTS)" \
-		-it $(JENKINS_REMOTE_IMAGE)
+		-it $(JENKINS_IMAGE)
 	$(MAKE) jenkins.prepare
 	$(MKSTAMP)
 
@@ -73,14 +80,16 @@ jenkins.logs: # Show jenkins container logs
 	$(TRACE)
 	$(DOCKER) logs $(JENKINS_CONTAINER)
 
-jenkins.rm: # Remove jenkins container
+jenkins.rm: jenkins.stop # Remove jenkins container
 	$(TRACE)
 	-$(DOCKER) rm $(JENKINS_CONTAINER)
+	$(call rmstamp,jenkins.create)
 
 jenkins.rmi: # Remove jenkins image
 	$(TRACE)
 	-$(DOCKER) rmi $(JENKINS_IMAGE):$(JENKINS_TAG)
-	$(call rmstamp,jenkins.create)
+	-$(DOCKER) rmi $(JENKINS_IMAGE):latest
+	$(call rmstamp,jenkins.build)
 
 jenkins.clean:
 	$(MAKE) jenkins.stop
