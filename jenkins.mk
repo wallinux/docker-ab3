@@ -2,7 +2,7 @@
 ################################################################
 JENKINS_REMOTE_TAG ?= lts
 JENKINS_REMOTE_IMAGE = jenkins/jenkins:$(JENKINS_REMOTE_TAG)
-JENKINS_IMAGE 	  = jenkins
+JENKINS_IMAGE 	  = rcs_jenkins
 JENKINS_CONTAINER = rcs_eprime_jenkins
 JENKINS_TAG 	  = $(JENKINS_CONTAINER)
 JENKINS_PORT	  ?= 8091
@@ -101,8 +101,8 @@ jenkins.update.apt: jenkins.start
 	$(JENKINS_EXEC_root) apt-get update
 	$(JENKINS_EXEC_root) apt-get upgrade -y
 
-$(JENKINS_CLI_JAR):
-	$(DOCKER) exec -u jenkins -it $(JENKINS_CONTAINER) /bin/bash -c "wget http://localhost:8091/jnlpJars/jenkins-cli.jar; mv jenkins-cli.jar $@"
+aw $(JENKINS_CLI_JAR):
+	$(DOCKER) exec -u jenkins -it $(JENKINS_CONTAINER) /bin/bash -c "cd /var/jenkins_home; wget http://localhost:8091/jnlpJars/jenkins-cli.jar; mv jenkins-cli.jar $@"
 
 jenkins.update.plugins: jenkins.start $(JENKINS_CLI_JAR)
 	$(TRACE)

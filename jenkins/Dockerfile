@@ -1,4 +1,4 @@
-FROM jenkins/jenkins
+FROM jenkins/jenkins:lts
 MAINTAINER Anders Wallin
 
 USER root
