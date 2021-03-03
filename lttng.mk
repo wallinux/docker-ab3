@@ -1,13 +1,13 @@
 # lttng.mk
 LTTNG_DISTRO		?= ubuntu-20.04
-LTTNG_TAGS		?= rcs stable-2.10 stable-2.11 stable-2.12 master
-LTTNG_TAG		?= rcs
-LTTNG_IMAGE		= lttng:$(LTTNG_TAG)
-LTTNG_CONTAINER		= lttng_$(LTTNG_TAG)
+LTTNG_TAGS		?= rcs rcsmaster master
+LTTNG_TAG		?= master
+LTTNG_IMAGE		= lttng:latest
+LTTNG_CONTAINER		= lttng
 #LTTNG_HOSTIP		= $(shell /sbin/ifconfig | grep 128.224 | cut -d: -f 2 | cut -d' ' -f 1)
 LTTNG_HOSTIP		?= $(shell /sbin/ifconfig docker0 | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p')
 LTTNG_HOSTNAME          ?= lttng-$(subst .,_,$(LTTNG_TAG)).eprime.com
-##LTTNG_PORTS		?= -p 5342:5342 -p 5343:5343 -p 5344:5344
+#LTTNG_PORTS		?= -p 5342:5342 -p 5343:5343 -p 5344:5344
 
 define run-docker-exec
 	$(DOCKER) exec -e HOSTIP=$(LTTNG_HOSTIP) -u root $(1) $(LTTNG_CONTAINER) $(2)
@@ -19,21 +19,20 @@ endef
 lttng.ALL: lttng.CREATE
 
 lttng.CREATE: # Create ALL lttng container
-	$(foreach tag,$(LTTNG_TAGS), make -s lttng.create LTTNG_TAG=$(tag); )
+	$(foreach tag,$(LTTNG_TAGS),make -s lttng.create LTTNG_TAG=$(tag); )
 
 lttng.DISTCLEAN: # Remove ALL lttng images and containers
-	-$(foreach tag, $(LTTNG_TAGS), make -s lttng.distclean LTTNG_TAG=$(tag); )	$(call rmstamp,lttng.build)
+	-$(foreach tag,$(LTTNG_TAGS),make -s lttng.distclean LTTNG_TAG=$(tag); )
+	$(call rmstamp,lttng.build)
 
 ################################################################
+lttng.all: lttng.make
+	$(TRACE)
+
 lttng.build: # Build lttng image
 	$(TRACE)
 	$(CP) $(HOME)/.gitconfig lttng/
-	$(DOCKER) build --pull -f lttng/Dockerfile.$(LTTNG_DISTRO) -t "lttng" .
-	$(MKSTAMP)
-
-lttng.build.% : lttng.build
-	$(TRACE)
-	$(DOCKER) build --no-cache -f lttng/Dockerfile-lttng --build-arg LTTNG_TAG=$* -t "lttng:$*" .
+	$(DOCKER) build --pull -f lttng/Dockerfile.$(LTTNG_DISTRO) -t "lttng" lttng
 	$(MKSTAMP)
 
 lttng.prepare:
@@ -46,7 +45,7 @@ lttng.prepare:
 	$(call run-docker-exec, -t, sh -c "if [ ! -e /root/.ssh/id_rsa ]; then ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ''; fi" )
 	$(DOCKER) stop -t 2 $(LTTNG_CONTAINER)
 
-lttng.create.%: lttng.build.$(LTTNG_TAG)
+lttng.create.%: #lttng.build.$(LTTNG_TAG)
 	$(TRACE)
 	$(DOCKER) create -P --name=$(LTTNG_CONTAINER) \
 		-h $(LTTNG_HOSTNAME) \
@@ -92,9 +91,19 @@ lttng.terminal: lttng.start # Start a gnome-terminal in lttng container
 	$(TRACE)
 	$(Q)gnome-terminal --command "docker exec -it $(LTTNG_CONTAINER) bash -c \"/bin/bash\"" &
 
+lttng.preparemake: lttng.start
+	$(TRACE)
+	$(call run-docker-exec, -it, sh -c "git -C lttng-test pull")
+	$(call run-docker-exec, -it, sh -c "make -C lttng-test repo.pull")
+	$(call run-docker-exec, -it, sh -c "make -C lttng-test $(LTTNG_TAG).patch")
+
+lttng.make: lttng.preparemake
+	$(TRACE)
+	$(call run-docker-exec, -it, sh -c "make -C lttng-test install")
+
 lttng.test: lttng.start # run tests in lttng container
 	$(TRACE)
-	$(call run-docker-exec, -it, sh -c "make -C lttng-test test.lttng_tools")
+	$(call run-docker-exec, -it, sh -c "make -C lttng-test test.lttng-tools")
 
 lttng.run: lttng.start # run targettest in lttng container
 	$(TRACE)
@@ -127,6 +136,8 @@ lttng.help:
 	$(call run-note, "- Use the LTTNG_TAG(=$(LTTNG_TAG)) to define image/container")
 	$(call run-note, "- Supported LTTNGS_TAGS are: $(LTTNG_TAGS)")
 	$(call run-note, "- LTTNG_HOSTIP = $(LTTNG_HOSTIP)")
+	$(call run-note, "- LTTNG_DISTRO = $(LTTNG_DISTRO)")
+	$(MAKE) lttng.cc.help
 
 ################################################################
 

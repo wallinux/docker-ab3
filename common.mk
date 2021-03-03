@@ -33,7 +33,7 @@ STAMPSDIR = $(TOP)/.stamps
 vpath % $(STAMPSDIR)
 MKSTAMP = $(Q)mkdir -p $(STAMPSDIR) ; touch $(STAMPSDIR)/$@
 %.force:
-	$(call rmstamp, $*)
+	$(call rmstamp,$*)
 	$(MAKE) $*
 
 define rmstamp

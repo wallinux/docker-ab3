@@ -6,7 +6,7 @@ SRCDIR=~/lttng-test/$PACKAGE
 BUILDDIR=~/lttng-test/build/$PACKAGE
 RESULTSDIR=~/ccresults/$PACKAGE
 REPORTSDIR=~/ccreports_html/$PACKAGE
-URL=http://${HOSTIP}:8001/RCS
+URL=http://${HOSTIP}:8001/Default
 
 TAG=$(git -C $SRCDIR describe)
 make -C $BUILDDIR -s clean
@@ -21,13 +21,7 @@ CHECK_OPT=""
 source ~/codechecker/venv/bin/activate
 export PATH=~/codechecker/build/CodeChecker/bin:$PATH
 CodeChecker check $CHECK_OPT --quiet --clean --build "make -C $BUILDDIR" -j10 -o $RESULTSDIR
-status=$?
-if [ $status = 0 ]; then
-    CodeChecker parse --trim-path-prefix --export html -o $REPORTSDIR $RESULTSDIR
-    CodeChecker store --trim-path-prefix --name $PACKAGE-$TAG --trim-path-prefix --url $URL $RESULTSDIR
-    status=$?
-else
-    echo "FAILED: CodeChecker check $CHECK_OPT --quiet --clean --build make -C $BUILDDIR -j10 -o $RESULTSDIR"
-fi
+CodeChecker parse --trim-path-prefix --export html -o $REPORTSDIR $RESULTSDIR
+CodeChecker store --trim-path-prefix --name $PACKAGE-$TAG --trim-path-prefix --url $URL $RESULTSDIR
 
-exit $status
+exit
