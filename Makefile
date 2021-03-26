@@ -13,7 +13,7 @@ include lttng.mk
 include snmp.mk
 #include gitea.mk
 #include gitlab.mk
-include jenkins.mk
+#include jenkins.mk see rcs-admin
 #include u-boot.mk
 #include openldap.mk
 include lvm2.mk
